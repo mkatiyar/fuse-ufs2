@@ -1,0 +1,8 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: fuse-ufs
+Description: UFS2 File System support for FUSE
+Version: 0.0.1

@@ -1,0 +1,5 @@
+* Fix symlinks
+* Fix all the error code paths
+* Fix writes/truncates for big files
+* Add a layer of caching over blkwrite/blkread
+* Remove unnecessary flush to disks

@@ -1,0 +1,50 @@
+
+Fuse-ufs is a UFS2 Filesystem support for FUSE.
+
+This software is based on libufs package.
+
+Dependencies
+------------
+  Fuse-ufs requires at least Fuse version 2.6.0 for linux
+
+- Linux:
+	Fuse from http://fuse.sourceforge.net/
+
+Build
+------
+- Linux:
+	$ ./autogen.sh
+	$ ./configure
+	$ make
+	$ sudo make install
+
+	You can use checkinstall or some other equivalent tool to generate install
+	package for your distribution.
+
+Usage
+-----
+
+Usage:    fuse-ufs <device|image_file> <mount_point> [-o option[,...]]
+
+Options:  ro, force, allow_others
+          Please see details in the manual.
+
+Example:  fuse-ufs /dev/sda1 /mnt/sda1
+
+Bugs
+----
+I wrote this software mainly for fun and to get something working on UFS2. Currently
+only the basic ops work. I've not tested corner cases like out of space and very big files.
+Moreover the ops only work on regular files and directories and not on special or symlink files.
+Those are in my TODO list. I'm not aware of known bugs for read-only mode,
+read only mode should be ok for every one.
+
+==== USE IT AT YOUR OWN RISK ====
+
+please send output the output of below command while reporting bugs.
+
+$ /usr/local/bin/fuse-ufs -v /dev/path /mnt/point -o debug
+
+Contact
+-------
+Manish Katiyar <mkatiyar@gmail.com>

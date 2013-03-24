@@ -1,0 +1,94 @@
+#
+# $Id: Makefile.common 45 2004-05-03 11:07:29Z guillem $
+#
+
+prefix = /usr/local
+exec_prefix = $(prefix)
+sbindir = $(exec_prefix)/sbin
+libdir = $(exec_prefix)/lib
+datadir = $(prefix)/share
+mandir = $(datadir)/man
+man8dir = $(mandir)/man8
+
+#LDADD += -lbsd -lfreebsd
+CFLAGS ?= -Wall
+#ALL_CFLAGS += -I../include -include port/port.h -include bsd/bsd.h -D_GNU_SOURCE
+ALL_CFLAGS += -I../include -D_GNU_SOURCE  -D_FILE_OFFSET_BITS=64
+#ALL_CFLAGS += -I../include -D_GNU_SOURCE -I/home/mkatiyar/personal/mtools/manish/include
+# -DHAVE_BSD_ERRNO -DHAVE_BSD_SIGNALS -DHAVE_BSD_STATFS -DHAVE_BSD_DISKLABEL -DHAVE_BSD_MOUNT -DHAVE_UFS_SNAPSHOT -DHAVE_BSD_SYSCTL
+
+INSTALL = install
+INSTALL_PROG = $(INSTALL)
+INSTALL_DATA = $(INSTALL) -m 644
+
+ifdef PROG
+OBJS = $(SRCS:.c=.o)
+endif
+
+ifdef LIB
+LIBSOBJS = $(LIBSRCS:.c=.lo)
+LIBOBJS = $(LIBSRCS:.c=.o)
+
+ifndef LIB_type
+LIB_type = static shared
+endif
+
+SHLIB_MAJOR ?= 0
+SHLIB_SONAME = lib$(LIB).so.$(SHLIB_MAJOR)
+endif
+
+# General rules
+
+%.lo: %.c
+	$(CC) -o $@ $(ALL_CFLAGS) $(CFLAGS) $(INCLUDES) -DPIC -fPIC -c $<
+
+%.o: %.c
+	$(CC) -o $@ $(ALL_CFLAGS) $(CFLAGS) $(INCLUDES) -c $<
+
+# Objectives
+
+all:: libs $(PROG)
+
+$(PROG):: $(OBJS)
+	$(CC) -o $@ $(ALL_CFLAGS) $(CFLAGS) $^ $(LDADD)
+
+ifneq (,$(findstring static,$(LIB_type)))
+LIB_targets += lib$(LIB).a
+endif
+ifneq (,$(findstring shared,$(LIB_type)))
+LIB_targets += lib$(LIB).so
+endif
+
+libs:: $(LIB_targets)
+
+lib$(LIB).so:: $(SHLIB_SONAME)
+	ln -fs $^ $@
+
+$(SHLIB_SONAME):: $(LIBSOBJS)
+	gcc -shared -Wl,-soname -Wl,$(SHLIB_SONAME) -o $@ $^ $(LDADD)
+
+lib$(LIB).a:: $(LIBOBJS)
+	ar rcs $@ $^
+
+# General targets
+
+clean::
+	rm -f $(OBJS) $(PROG)
+	rm -f $(LIBSOBJS) $(LIBOBJS)
+	rm -f $(SHLIB_SONAME) lib$(LIB).so lib$(LIB).a
+
+install::
+ifdef PROG
+	$(INSTALL_PROG) $(PROG) $(DESTDIR)$(sbindir)
+endif
+ifdef MAN
+	$(INSTALL_DATA) $(subst :, $(DESTDIR)$(man8dir)/,$(MAN))
+endif
+ifneq (,$(findstring static,$(LIB_type)))
+	$(INSTALL_DATA) lib$(LIB).a $(DESTDIR)$(libdir)/lib$(LIB).a
+endif
+ifneq (,$(findstring shared,$(LIB_type)))
+	$(INSTALL_DATA) lib$(LIB).so $(DESTDIR)$(libdir)/lib$(LIB).so
+	$(INSTALL_DATA) $(SHLIB_SONAME) $(DESTDIR)$(libdir)/$(SHLIB_SONAME)
+endif
+

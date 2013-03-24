@@ -1,0 +1,12 @@
+I would like to thank the authors and contributors of fuse-ext2. I took the framework
+of fuse-ext2 and started modifying it to work for UFS. It shouldn't come as a surprise
+if you see a striking similarity between the directory structure and build system of
+fuse-ufs and fuse-ext2. Some of the core allocation routines were taken and modified
+from ffs module in ufsutils-7.0.
+
+Special thanks to :-
+Alper Akcan <alper.akcan@gmail.com>
+Renzo Davoli <renzo@cs.unibo.it>
+
+
+=== USE IT AT YOUR OWN RISK !!! =====
