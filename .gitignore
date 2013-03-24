@@ -2,3 +2,6 @@
 *.lo
 *~
 *.Po
+.deps
+.fuse-*
+.deps/*
