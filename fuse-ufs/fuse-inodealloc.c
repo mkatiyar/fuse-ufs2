@@ -70,6 +70,7 @@ ufs_inode_alloc(struct inode *ip, int cg,
 	if (!locptr) {
 		start = 0;
 		int i = start;
+		len = howmany(fs->fs_ipg, NBBY);
 		for (; i < len; i++) {
 			if (inosused[i] == 0xff) {
 				continue;

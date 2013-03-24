@@ -221,15 +221,6 @@ static char * parse_mount_options (const char *orig_opts, struct ufs_data *opts,
 				goto err_exit;
 			}
 			opts->silent = 1;
-		} else if (!strcmp(opt, "force")) { /* enable read/write */
-			if (val) {
-				debugf_main("'force option should no have value");
-				goto err_exit;
-			}
-			opts->force = 1;
-#if __FreeBSD__ == 10
-			strcat(ret, "force,");
-#endif
 		} else { /* Probably FUSE option. */
 			strcat(ret, opt);
 			if (val) {
@@ -238,11 +229,6 @@ static char * parse_mount_options (const char *orig_opts, struct ufs_data *opts,
 			}
 			strcat(ret, ",");
 		}
-	}
-
-	if (opts->readonly == 0 && opts->force == 0) {
-		fprintf(stderr, "Mounting %s Read-Only.\nUse \'force\' or \'rw+\' options to enable Read-Write mode\n",opts->device);
-		opts->readonly = 1;
 	}
 
 	/* Do the basic permission checks for rw */
