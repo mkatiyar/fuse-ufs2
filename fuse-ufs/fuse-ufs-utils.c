@@ -23,6 +23,10 @@
 #define DIRENT_ABORT 2
 #define KEEPON 0
 
+static int
+ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathlen,
+		int follow, int link_count, char *buf, ino_t *res_inode);
+
 struct lookup_struct  {
 	const char *name;
 	int	len;
@@ -179,6 +183,55 @@ ufs_dir_namei(uufsd_t *ufs, ino_t root, ino_t dir, const char *pathname, int pat
 }
 
 static int
+ufs_follow_link(uufsd_t *ufs, ino_t root, ino_t dir, ino_t inode, int link_count,
+				char *buf, ino_t *res_inode)
+{
+	char *pathname;
+	char *buffer = 0;
+	errcode_t retval;
+	struct ufs_vnode *vnode;
+	struct inode *inodep;
+	int blocksize = ufs->d_fs.fs_bsize;
+
+	vnode = vnode_get(ufs, inode);
+	if (!vnode) {
+		return -ENOMEM;
+	}
+
+	inodep = vnode2inode(vnode);
+
+	if (!LINUX_S_ISLNK(inodep->i_mode)) {
+		*res_inode = inode;
+		retval = 0;
+		goto out;
+	}
+
+	if (link_count++ > 5) {
+		retval = -EMLINK;
+		goto out;
+	}
+	if (inodep->i_blocks) {
+		retval = ufs_get_mem(blocksize, &buffer);
+		if (retval)
+			goto out;
+		retval = blkread(ufs, UFS_DINODE(inodep)->di_db[0], buffer, blocksize);
+		if (retval) {
+			goto out;
+		}
+		pathname = buffer;
+	} else
+		pathname = (char *)&(UFS_DINODE(inodep)->di_db[0]);
+	retval = ufs_open_namei(ufs, root, dir, pathname, inodep->i_size, 1,
+			link_count, buf, res_inode);
+out:
+	vnode_put(vnode, 0);
+
+	if (buffer)
+		ufs_free_mem(&buffer);
+	return retval;
+}
+
+static int
 ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathlen,
 		int follow, int link_count, char *buf, ino_t *res_inode)
 {
@@ -197,9 +250,10 @@ ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathl
 	retval = ufs_lookup(ufs, dir, base_name, namelen, buf, &inode);
 
 	if (follow) {
-		/* Manish fix this */
-		printf("Going to die ....\n");
-		exit(-1);
+		retval = ufs_follow_link(ufs, root, dir, inode, link_count,
+				buf, &inode);
+		if (retval)
+			return retval;
 	}
 
 	if (retval) {

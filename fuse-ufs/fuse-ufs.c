@@ -184,6 +184,8 @@ static char * parse_mount_options (const char *orig_opts, struct ufs_data *opts,
 	}
 
 	s = options;
+	opts->readonly = 1;
+
 	while (s && *s && (val = strsep(&s, ","))) {
 		opt = strsep(&val, "=");
 		if (!strcmp(opt, "ro")) { /* Read-only mount. */
