@@ -5,9 +5,8 @@ INCS=	libufs.h
 
 ALL_CFLAGS+= -D_LIBUFS
 ifdef LIBUFS_DEBUG
-ALL_CFLAGS+= -D_LIBUFS_DEBUGGING -E
+ALL_CFLAGS+= -D_LIBUFS_DEBUGGING
 endif
-LDADD += -lbsd
 INCLUDES = -I.
 
 include ./Makefile.common
