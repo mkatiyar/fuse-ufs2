@@ -36,7 +36,9 @@ static int walk_dir (struct direct *de, int offset, char *buf, void *priv_data)
 	debugf("enter");
 
 	st.st_ino=de->d_ino;
+#if !defined __x86_64__ && defined __USE_FILE_OFFSET64
 	st.__st_ino=de->d_ino;
+#endif
 //	st.st_mode=type<<12;
 
 	flen = de->d_namlen & 0xff;
