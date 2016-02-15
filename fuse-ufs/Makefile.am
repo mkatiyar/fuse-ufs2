@@ -133,5 +133,5 @@ install-data-hook:
 	cd "$(DESTDIR)/$(moddir)" && rm -f $(mod_LTLIBRARIES)
 
 install-exec-local:
-	$(INSTALL) -d "$(DESTDIR)/usr/sbin"
-	$(LN_S) -f "$(DESTDIR)/$(bindir)/fuse-ufs" "$(DESTDIR)/sbin/mount.fuse-ufs"
+	$(INSTALL) -d "$(DESTDIR)/$(sbindir)"
+	$(LN_S) -f "$(DESTDIR)/$(bindir)/fuse-ufs" "$(DESTDIR)/$(sbindir)/mount.fuse-ufs"
