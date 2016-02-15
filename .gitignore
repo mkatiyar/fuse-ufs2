@@ -2,6 +2,8 @@
 *.lo
 *~
 *.Po
-.deps
 .fuse-*
+
+# Dependency files: Dummies provided by configure, content updated by make
+.deps/
 .deps/*
