@@ -157,18 +157,16 @@ AC_ARG_ENABLE([debug],
 [  --disable-debug    	  disable noisy debug],
 if test "$enableval" = "no"
 then
-	DEBUG_CMT=#
 	echo "Disabling debug support"
 else
-	DEBUG_CMT=
 	AC_DEFINE(ENABLE_DEBUG, 1, [Define to 1 if you want 'debug' support.])
 	echo "Enabling debug support"
 fi
 ,
-DEBUG_CMT=
 echo "Enabling debug support by default"
 	AC_DEFINE(ENABLE_DEBUG, 1, [Define to 1 if you want 'debug' support.])
 )
+AM_CONDITIONAL([LIBUFS_DEBUG], [test "$enable_debug" != "no"])
 
 AC_ARG_ENABLE([swapfs],
 [  --disable-swapfs    	  disable support of legacy byte-swapped filesystems],

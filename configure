@@ -640,6 +640,8 @@ DARWIN_TRUE
 LINUX_FALSE
 LINUX_TRUE
 pkgconfigdir
+LIBUFS_DEBUG_FALSE
+LIBUFS_DEBUG_TRUE
 LIBOBJS
 CHMOD
 CXXCPP
@@ -17345,10 +17347,8 @@ rm -f conftest*
 if test "${enable_debug+set}" = set; then :
   enableval=$enable_debug; if test "$enableval" = "no"
 then
-	DEBUG_CMT=#
 	echo "Disabling debug support"
 else
-	DEBUG_CMT=
 
 $as_echo "#define ENABLE_DEBUG 1" >>confdefs.h
 
@@ -17356,12 +17356,19 @@ $as_echo "#define ENABLE_DEBUG 1" >>confdefs.h
 fi
 
 else
-  DEBUG_CMT=
-echo "Enabling debug support by default"
+  echo "Enabling debug support by default"
 
 $as_echo "#define ENABLE_DEBUG 1" >>confdefs.h
 
 
+fi
+
+ if test "$enable_debug" != "no"; then
+  LIBUFS_DEBUG_TRUE=
+  LIBUFS_DEBUG_FALSE='#'
+else
+  LIBUFS_DEBUG_TRUE='#'
+  LIBUFS_DEBUG_FALSE=
 fi
 
 
@@ -17554,6 +17561,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${LIBUFS_DEBUG_TRUE}" && test -z "${LIBUFS_DEBUG_FALSE}"; then
+  as_fn_error $? "conditional \"LIBUFS_DEBUG\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${LINUX_TRUE}" && test -z "${LINUX_FALSE}"; then

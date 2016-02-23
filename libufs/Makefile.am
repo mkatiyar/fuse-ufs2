@@ -11,5 +11,8 @@ libufs_a_SOURCES = \
 libufs_a_CFLAGS = \
 	-Wall \
 	-DHAVE_CONFIG_H \
-	-D_LIBUFS \
-	-D_LIBUFS_DEBUGGING
+	-D_LIBUFS
+
+if LIBUFS_DEBUG
+libufs_a_CFLAGS += -D_LIBUFS_DEBUGGING
+endif

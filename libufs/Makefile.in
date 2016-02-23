@@ -79,6 +79,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@LIBUFS_DEBUG_TRUE@am__append_1 = -D_LIBUFS_DEBUGGING
 subdir = libufs
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
@@ -300,12 +301,7 @@ libufs_a_SOURCES = \
 	sblock.c \
 	type.c
 
-libufs_a_CFLAGS = \
-	-Wall \
-	-DHAVE_CONFIG_H \
-	-D_LIBUFS \
-	-D_LIBUFS_DEBUGGING
-
+libufs_a_CFLAGS = -Wall -DHAVE_CONFIG_H -D_LIBUFS $(am__append_1)
 all: all-am
 
 .SUFFIXES:
