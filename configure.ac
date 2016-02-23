@@ -199,6 +199,7 @@ AM_CONDITIONAL(DARWIN, test "$arch" = darwin)
 AC_CONFIG_FILES([
 	fuse-ufs.pc
 	Makefile
+	libufs/Makefile
 	fuse-ufs/Makefile
 ])
 

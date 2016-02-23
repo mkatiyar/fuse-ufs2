@@ -17416,7 +17416,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files fuse-ufs.pc Makefile fuse-ufs/Makefile"
+ac_config_files="$ac_config_files fuse-ufs.pc Makefile libufs/Makefile fuse-ufs/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -18536,6 +18536,7 @@ do
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "fuse-ufs.pc") CONFIG_FILES="$CONFIG_FILES fuse-ufs.pc" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "libufs/Makefile") CONFIG_FILES="$CONFIG_FILES libufs/Makefile" ;;
     "fuse-ufs/Makefile") CONFIG_FILES="$CONFIG_FILES fuse-ufs/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
