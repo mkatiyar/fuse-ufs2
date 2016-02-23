@@ -126,7 +126,6 @@ fuse_ufs_CFLAGS = \
 fuse_ufs_LDADD = \
 	-L/usr/local/lib \
 	../libufs/libufs.a \
-	-lcom_err \
 	-lfuse
 
 install-data-hook:
