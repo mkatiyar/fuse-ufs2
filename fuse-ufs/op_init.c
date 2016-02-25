@@ -75,6 +75,9 @@ void * op_init (struct fuse_conn_info *conn)
 	bzero(fs->fs_contigdirs, size);
 	fs->fs_active = NULL;
 
+	/* honour readonly mount option: copy into temporary superblock field */
+	fs->fs_ronly = ufsdata->readonly;
+
 	debugf("FileSystem %s", (ufsdata->ufs.d_fs.fs_ronly == 0) ? "Read&Write" : "ReadOnly");
 	debugf("leave");
 
