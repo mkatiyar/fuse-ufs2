@@ -21,6 +21,7 @@
 
 static void release_callback (struct ufs_vnode *vnode, int flags)
 {
+	/* TODO: Track whether the inode is actually dirty */
 	vnode_put(vnode, (flags & UFS_FILE_WRITE) != 0);
 }
 

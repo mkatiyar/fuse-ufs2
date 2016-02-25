@@ -516,7 +516,13 @@ errcode_t ufs_file_close2 (ufs_file_t file, void (*close_callback) (struct ufs_v
 		ufs_free_mem(&file->buf);
 	}
 	if (!(file->flags & UFS_FILE_SHARED_INODE)) {
-		vnode_put(file->inode, 1);
+		/*
+		 * Write inode to disk unless we're mounted read-only
+		 * (access time field should have changed at least?)
+		 * TODO: Track whether the inode is actually dirty
+		 */
+		int dirty = !file->fs->d_fs.fs_ronly;
+		vnode_put(file->inode, dirty);
 	} else if (close_callback != NULL) {
 		close_callback(file->inode, file->flags & UFS_FILE_MASK);
 	}
