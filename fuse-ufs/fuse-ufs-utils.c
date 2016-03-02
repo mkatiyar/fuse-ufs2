@@ -62,6 +62,7 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 	char *dirbuf = NULL;
 	caddr_t end_addr;
 	struct ufs_vnode *vnode;
+	struct direct *de;
 
 	vnode = vnode_get(ufs, dirino);
 	if (vnode == NULL) {
@@ -75,7 +76,6 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 		goto out;
 	}
 
-	struct direct *de = (struct direct *)dirbuf;
 	end_addr = dirbuf + blksize;
 
 	ndb = howmany((vnode2inode(vnode)->i_size), ufs->d_fs.fs_bsize);
@@ -92,6 +92,7 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 			ret = -EIO;
 			goto out;
 		}
+		de = (struct direct *)dirbuf;
 		offset = 0;
 		while ((char *)de < end_addr &&
 			(de->d_ino || (flags & DIRENT_FLAG_INCLUDE_EMPTY))) {
