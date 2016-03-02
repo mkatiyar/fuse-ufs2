@@ -59,6 +59,7 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 	ufs2_daddr_t ndb;
 	ufs2_daddr_t blkno;
 	int blksize = ufs->d_fs.fs_bsize;
+	u_int64_t dir_size;
 	char *dirbuf = NULL;
 	caddr_t end_addr;
 	struct ufs_vnode *vnode;
@@ -69,6 +70,7 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 		ret = -ENOMEM;
 		goto out;
 	}
+	dir_size = vnode2inode(vnode)->i_size;
 
 	dirbuf = malloc(blksize);
 	if (!dirbuf) {
@@ -78,7 +80,7 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 
 	end_addr = dirbuf + blksize;
 
-	ndb = howmany((vnode2inode(vnode)->i_size), ufs->d_fs.fs_bsize);
+	ndb = howmany(dir_size, ufs->d_fs.fs_bsize);
 	int offset, pos = 0;
 	for (i = 0; i < ndb ; i++) {
 		ret = ufs_bmap(ufs, dirino, vnode, i, &blkno);
@@ -94,7 +96,7 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 		}
 		de = (struct direct *)dirbuf;
 		offset = 0;
-		while ((char *)de < end_addr &&
+		while ((char *)de < end_addr && pos + offset < dir_size &&
 			(de->d_ino || (flags & DIRENT_FLAG_INCLUDE_EMPTY))) {
 	//		debugf("Dir %d : %s %d %d %d\n", (int)dirino,
 	//				de->d_name, de->d_ino,
