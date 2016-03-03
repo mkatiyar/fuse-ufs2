@@ -76,7 +76,7 @@ int op_readdir (const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 		return rt;
 	}
 
-	rc = ufs_dir_iterate(ufs, ino, 0, buf, walk_dir, &dwd);
+	rc = ufs_dir_iterate(ufs, ino, 0, walk_dir, &dwd);
 	if (rc) {
 		debugf("Error while trying to ufs_dir_iterate %s", path);
 		vnode_put(vnode, 0);

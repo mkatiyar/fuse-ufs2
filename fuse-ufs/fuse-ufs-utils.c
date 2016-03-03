@@ -47,7 +47,7 @@ static int lookup_proc(struct direct *dirent, int inum, char *buf, void *priv_da
 }
 
 int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
-		    char *block_buf, int (*func)(
+		    int (*func)(
 					  struct direct *dirent,
 					  int n,
 					  char *buf,
@@ -136,7 +136,7 @@ int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
 	ls.inode = ino;
 	ls.found = 0;
 
-	retval = ufs_dir_iterate(ufs, dir, 0, buf, lookup_proc, &ls);
+	retval = ufs_dir_iterate(ufs, dir, 0, lookup_proc, &ls);
 	if (retval)
 		return retval;
 

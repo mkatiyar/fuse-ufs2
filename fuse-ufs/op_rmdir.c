@@ -49,7 +49,7 @@ int do_check_empty_dir(uufsd_t *ufs, ino_t ino)
 	errcode_t rc;
 	int empty = 1;
 
-	rc = ufs_dir_iterate(ufs, ino, 0, 0, rmdir_proc, &empty);
+	rc = ufs_dir_iterate(ufs, ino, 0, rmdir_proc, &empty);
 	if (rc) {
 		debugf("while iterating over directory");
 		return -EIO;

@@ -998,7 +998,7 @@ ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 	ls.err = 0;
 
 	retval = ufs_dir_iterate(ufs, dir, DIRENT_FLAG_INCLUDE_EMPTY,
-				    0, link_proc, &ls);
+				 link_proc, &ls);
 	if (retval)
 		return retval;
 	if (ls.err)
@@ -1102,7 +1102,7 @@ ufs_unlink(uufsd_t *ufs, ino_t dir_ino, char *name, ino_t file_ino, int flags)
 	ls.prev_dirent = 0;
 
 
-	retval = ufs_dir_iterate(ufs, dir_ino, 0, NULL, unlink_proc, &ls);
+	retval = ufs_dir_iterate(ufs, dir_ino, 0, unlink_proc, &ls);
 	if (retval)
 		return retval;
 	return 0;

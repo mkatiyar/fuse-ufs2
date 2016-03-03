@@ -292,7 +292,7 @@ int ufs_namei(uufsd_t *ufs, ino_t root_ino, ino_t cur_ino, const char *filename,
 errcode_t ufs_bmap(uufsd_t *ufs, ino_t dirino, struct ufs_vnode *inode, blk_t fbn, ufs2_daddr_t *blkno);
 
 int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
-                    char *block_buf, int (*func)(
+                    int (*func)(
                                           struct direct *dirent,
 					  int inum,
 					  char *buf,
