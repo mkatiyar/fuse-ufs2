@@ -21,7 +21,6 @@
 #include <sys/param.h>
 #define UFS_FILE_NOT_FOUND ENOENT
 #define DIRENT_ABORT 2
-#define KEEPON 0
 
 static int
 ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathlen,
@@ -61,9 +60,7 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 	int blksize = ufs->d_fs.fs_bsize;
 	u_int64_t dir_size;
 	char *dirbuf = NULL;
-	caddr_t end_addr;
 	struct ufs_vnode *vnode;
-	struct direct *de;
 
 	vnode = vnode_get(ufs, dirino);
 	if (vnode == NULL) {
@@ -77,8 +74,6 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 		ret = -ENOMEM;
 		goto out;
 	}
-
-	end_addr = dirbuf + blksize;
 
 	ndb = howmany(dir_size, ufs->d_fs.fs_bsize);
 	int offset, pos = 0;
@@ -94,12 +89,9 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 			ret = -EIO;
 			goto out;
 		}
-		de = (struct direct *)dirbuf;
 		offset = 0;
-		while ((char *)de < end_addr && pos + offset < dir_size) {
-	//		debugf("Dir %d : %s %d %d %d\n", (int)dirino,
-	//				de->d_name, de->d_ino,
-	//				de->d_type, de->d_reclen);
+		while (offset < blksize && pos + offset < dir_size) {
+			struct direct *de = (struct direct *)(dirbuf + offset);
 			if (de->d_ino || (flags & DIRENT_FLAG_INCLUDE_EMPTY))
 				ret = (*func)(de, offset, dirbuf, priv_data);
 			else
@@ -116,7 +108,6 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 				goto out;
 			}
 			offset += de->d_reclen;
-			de = (struct direct *)((char *)de + de->d_reclen);
 		}
 		pos += blksize;
 	}
