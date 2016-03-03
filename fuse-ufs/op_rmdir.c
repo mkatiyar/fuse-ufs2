@@ -29,10 +29,13 @@ static int rmdir_proc (struct direct *dirent, int offset,
 {
 	int *p_empty= (int *) private;
 
+	if (dirent->d_ino==0) /* skip unused dentry */
+		return 0;
+
 	debugf("enter");
 	debugf("walking on: %s", dirent->d_name);
 
-	if (dirent->d_ino == 0 ||
+	if (
 			(((dirent->d_namlen & 0xFF) == 1) && (dirent->d_name[0] == '.')) ||
 			(((dirent->d_namlen & 0xFF) == 2) && (dirent->d_name[0] == '.') && 
 			 (dirent->d_name[1] == '.'))) {
@@ -49,7 +52,7 @@ int do_check_empty_dir(uufsd_t *ufs, ino_t ino)
 	errcode_t rc;
 	int empty = 1;
 
-	rc = ufs_dir_iterate(ufs, ino, 0, rmdir_proc, &empty);
+	rc = ufs_dir_iterate(ufs, ino, rmdir_proc, &empty);
 	if (rc) {
 		debugf("while iterating over directory");
 		return -EIO;

@@ -37,6 +37,9 @@ static int lookup_proc(struct direct *dirent, int inum, char *buf, void *priv_da
 {
 	struct lookup_struct *ls = (struct lookup_struct *) priv_data;
 
+	if (dirent->d_ino==0) /* skip unused dentry */
+		return 0;
+
 	if (ls->len != (dirent->d_namlen & 0xFF))
 		return 0;
 	if (strncmp(ls->name, dirent->d_name, (dirent->d_namlen & 0xFF)))
@@ -46,7 +49,7 @@ static int lookup_proc(struct direct *dirent, int inum, char *buf, void *priv_da
 	return DIRENT_ABORT;
 }
 
-int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
+int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino,
 		    int (*func)(
 					  struct direct *dirent,
 					  int n,
@@ -92,10 +95,7 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 		offset = 0;
 		while (offset < blksize && pos + offset < dir_size) {
 			struct direct *de = (struct direct *)(dirbuf + offset);
-			if (de->d_ino || (flags & DIRENT_FLAG_INCLUDE_EMPTY))
-				ret = (*func)(de, offset, dirbuf, priv_data);
-			else
-				ret = 0;
+			ret = (*func)(de, offset, dirbuf, priv_data);
 			if (ret & DIRENT_CHANGED) {
 				if (blkwrite(ufs, fsbtodb(&ufs->d_fs, blkno), dirbuf, blksize) == -1) {
 					debugf("Unable to write block %d\n",blkno);
@@ -136,7 +136,7 @@ int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
 	ls.inode = ino;
 	ls.found = 0;
 
-	retval = ufs_dir_iterate(ufs, dir, 0, lookup_proc, &ls);
+	retval = ufs_dir_iterate(ufs, dir, lookup_proc, &ls);
 	if (retval)
 		return retval;
 

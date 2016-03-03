@@ -33,6 +33,9 @@ static int walk_dir (struct direct *de, int offset, char *buf, void *priv_data)
 	struct stat st;
 	memset(&st, 0, sizeof(st));
 
+	if (de->d_ino==0) /* skip unused dentry */
+		return 0;
+
 	debugf("enter");
 
 	st.st_ino=de->d_ino;
@@ -76,7 +79,7 @@ int op_readdir (const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 		return rt;
 	}
 
-	rc = ufs_dir_iterate(ufs, ino, 0, walk_dir, &dwd);
+	rc = ufs_dir_iterate(ufs, ino, walk_dir, &dwd);
 	if (rc) {
 		debugf("Error while trying to ufs_dir_iterate %s", path);
 		vnode_put(vnode, 0);

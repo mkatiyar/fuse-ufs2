@@ -997,8 +997,7 @@ ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 	ls.blocksize = fs->fs_bsize;
 	ls.err = 0;
 
-	retval = ufs_dir_iterate(ufs, dir, DIRENT_FLAG_INCLUDE_EMPTY,
-				 link_proc, &ls);
+	retval = ufs_dir_iterate(ufs, dir, link_proc, &ls);
 	if (retval)
 		return retval;
 	if (ls.err)
@@ -1057,6 +1056,9 @@ static int unlink_proc(struct direct *dirent,
 	struct unlink_struct *ls = (struct unlink_struct *) priv_data;
 	struct direct *prev;
 
+	if (dirent->d_ino==0) /* skip unused dentry */
+		return 0;
+
 	prev = ls->prev_dirent;
 	ls->prev_dirent = dirent;
 
@@ -1102,7 +1104,7 @@ ufs_unlink(uufsd_t *ufs, ino_t dir_ino, char *name, ino_t file_ino, int flags)
 	ls.prev_dirent = 0;
 
 
-	retval = ufs_dir_iterate(ufs, dir_ino, 0, unlink_proc, &ls);
+	retval = ufs_dir_iterate(ufs, dir_ino, unlink_proc, &ls);
 	if (retval)
 		return retval;
 	return 0;

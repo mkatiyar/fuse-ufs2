@@ -46,8 +46,7 @@ static int do_fix_dotdot(uufsd_t *ufs, ino_t ino, ino_t dotdot)
 	errcode_t rc;
 
 	debugf("enter");
-	rc = ufs_dir_iterate(ufs, ino, DIRENT_FLAG_INCLUDE_EMPTY, 
-			     fix_dotdot_proc, &dotdot);
+	rc = ufs_dir_iterate(ufs, ino, fix_dotdot_proc, &dotdot);
 	if (rc) {
 		debugf("while iterating over directory");
 		return -EIO;
