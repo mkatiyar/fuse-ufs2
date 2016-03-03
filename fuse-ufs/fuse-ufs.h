@@ -341,5 +341,5 @@ int ufs_expand_dir(uufsd_t *ufs, ino_t d_ino);
 int ufs_valloc( struct ufs_vnode *pvp, int mode, struct ufs_vnode **vnodepp);
 int do_modetoufslag (mode_t mode);
 int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
-		char *buf, ino_t *ino);
+		ino_t *ino);
 #endif /* FUSEUFS_H_ */

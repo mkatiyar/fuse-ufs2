@@ -143,7 +143,7 @@ static int ufs_mkdir(uufsd_t *ufs, ino_t parent, ino_t inum, char *name)
 	 * Link the directory into the filesystem hierarchy
 	 */
 	if (name) {
-		retval = ufs_lookup(ufs, parent, name, strlen(name), 0,
+		retval = ufs_lookup(ufs, parent, name, strlen(name),
 				       &scratch_ino);
 		if (!retval) {
 			retval = EEXIST;

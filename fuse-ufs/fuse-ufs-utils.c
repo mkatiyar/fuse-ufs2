@@ -24,7 +24,7 @@
 
 static int
 ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathlen,
-		int follow, int link_count, char *buf, ino_t *res_inode);
+		int follow, int link_count, ino_t *res_inode);
 
 struct lookup_struct  {
 	const char *name;
@@ -123,7 +123,7 @@ out:
 }
 
 int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
-		char *buf, ino_t *ino)
+		ino_t *ino)
 {
 	int	retval;
 	struct lookup_struct ls;
@@ -145,7 +145,7 @@ int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
 
 static int
 ufs_dir_namei(uufsd_t *ufs, ino_t root, ino_t dir, const char *pathname, int pathlen,
-		int link_count, char *buf, const char **name, int *namelen,
+		int link_count, const char **name, int *namelen,
 		ino_t *res_ino)
 {
 	char c;
@@ -168,7 +168,7 @@ ufs_dir_namei(uufsd_t *ufs, ino_t root, ino_t dir, const char *pathname, int pat
 		}
 		if (pathlen < 0)
 			break;
-		retval = ufs_lookup (ufs, dir, thisname, len, buf, &inode);
+		retval = ufs_lookup (ufs, dir, thisname, len, &inode);
 		if (retval) return retval;
 		dir = inode;
 	}
@@ -180,7 +180,7 @@ ufs_dir_namei(uufsd_t *ufs, ino_t root, ino_t dir, const char *pathname, int pat
 
 static int
 ufs_follow_link(uufsd_t *ufs, ino_t root, ino_t dir, ino_t inode, int link_count,
-				char *buf, ino_t *res_inode)
+				ino_t *res_inode)
 {
 	char *pathname;
 	char *buffer = 0;
@@ -218,7 +218,7 @@ ufs_follow_link(uufsd_t *ufs, ino_t root, ino_t dir, ino_t inode, int link_count
 	} else
 		pathname = (char *)&(UFS_DINODE(inodep)->di_db[0]);
 	retval = ufs_open_namei(ufs, root, dir, pathname, inodep->i_size, 1,
-			link_count, buf, res_inode);
+			link_count, res_inode);
 out:
 	vnode_put(vnode, 0);
 
@@ -229,13 +229,13 @@ out:
 
 static int
 ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathlen,
-		int follow, int link_count, char *buf, ino_t *res_inode)
+		int follow, int link_count, ino_t *res_inode)
 {
 	int retval, namelen;
 	const char *base_name;
 	ino_t dir, inode;
 
-	retval = ufs_dir_namei(ufs, root, base, path, pathlen, link_count, buf, &base_name, &namelen, &dir);
+	retval = ufs_dir_namei(ufs, root, base, path, pathlen, link_count, &base_name, &namelen, &dir);
 	if (retval) return retval;
 
 	if (!namelen) {
@@ -243,11 +243,11 @@ ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathl
 		return 0;
 	}
 
-	retval = ufs_lookup(ufs, dir, base_name, namelen, buf, &inode);
+	retval = ufs_lookup(ufs, dir, base_name, namelen, &inode);
 
 	if (follow) {
 		retval = ufs_follow_link(ufs, root, dir, inode, link_count,
-				buf, &inode);
+				&inode);
 		if (retval)
 			return retval;
 	}
@@ -265,18 +265,8 @@ ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathl
  */
 int ufs_namei(uufsd_t *ufs, ino_t root_ino, ino_t cur_ino, const char *filename, ino_t *ino)
 {
-	char *buf = (char *)malloc(ufs->d_fs.fs_bsize);
-	if (!buf) {
-		debugf("%s: Unable to allocate memory \n", __func__);
-		return -1;
-	} else {
-		bzero(buf, ufs->d_fs.fs_bsize);
-	}
-
 	int ret = ufs_open_namei(ufs, root_ino, cur_ino, filename,
-				 strlen(filename), 0, 0, buf, ino);
-
-	free(buf);
+				 strlen(filename), 0, 0, ino);
 
 	return ret;
 }
