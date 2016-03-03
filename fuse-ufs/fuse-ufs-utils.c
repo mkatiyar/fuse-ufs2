@@ -96,12 +96,14 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 		}
 		de = (struct direct *)dirbuf;
 		offset = 0;
-		while ((char *)de < end_addr && pos + offset < dir_size &&
-			(de->d_ino || (flags & DIRENT_FLAG_INCLUDE_EMPTY))) {
+		while ((char *)de < end_addr && pos + offset < dir_size) {
 	//		debugf("Dir %d : %s %d %d %d\n", (int)dirino,
 	//				de->d_name, de->d_ino,
 	//				de->d_type, de->d_reclen);
-			ret = (*func)(de, offset, dirbuf, priv_data);
+			if (de->d_ino || (flags & DIRENT_FLAG_INCLUDE_EMPTY))
+				ret = (*func)(de, offset, dirbuf, priv_data);
+			else
+				ret = 0;
 			if (ret & DIRENT_CHANGED) {
 				if (blkwrite(ufs, fsbtodb(&ufs->d_fs, blkno), dirbuf, blksize) == -1) {
 					debugf("Unable to write block %d\n",blkno);
