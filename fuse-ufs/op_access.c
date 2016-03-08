@@ -26,8 +26,12 @@ int op_access (const char *path, int mask)
 	debugf("enter");
 	debugf("path = %s, mask = 0%o", path, mask);
 
+	/* This is redundant: it should have been handled by the fuse layer
+	 * (it will be unless we disagree about the readonly mount flag)
+	 */
 	if ((mask & W_OK) && (ufs->d_fs.fs_ronly)) {
-		return -1;
+		debugf("FIXME: fuse calls access(W_OK) on read-only mount");
+		return -EROFS;
 	}
 
 	debugf("leave");
