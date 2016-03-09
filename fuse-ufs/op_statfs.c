@@ -30,7 +30,8 @@ int op_statfs (const char *path, struct statvfs *buf)
 
 	buf->f_blocks = fs->fs_dsize;
 	buf->f_bfree = blkstofrags(fs, fs->fs_cstotal.cs_nbfree) + fs->fs_cstotal.cs_nffree + dbtofsb(fs, fs->fs_pendingblocks);;
-	buf->f_bsize = fs->fs_fsize;
+	buf->f_bsize  = fs->fs_bsize;
+	buf->f_frsize = fs->fs_fsize;
 	buf->f_bavail = freespace(fs, fs->fs_minfree) + dbtofsb(fs, fs->fs_pendingblocks);
 	buf->f_files = fs->fs_ncg * fs->fs_ipg - ROOTINO;
 	buf->f_ffree = fs->fs_cstotal.cs_nifree + fs->fs_pendinginodes;
