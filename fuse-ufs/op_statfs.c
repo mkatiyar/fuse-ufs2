@@ -62,6 +62,7 @@ int op_statfs (const char *path, struct statvfs *buf)
 
 	/* -- Number of free inodes for unprivileged users */
 	buf->f_favail = buf->f_ffree; /* UFS does not reserve inodes */
+	/* This field is ignored by fuse - but we gave what we could... */
 
 
 	/* File system ID - "Not meaningful" on FreeBSD */
