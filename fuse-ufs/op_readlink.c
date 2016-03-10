@@ -48,7 +48,7 @@ int op_readlink (const char *path, char *buf, size_t size)
 		goto out;
 	}
 
-	if (!LINUX_S_ISLNK(inode->i_mode)) {
+	if (!S_ISLNK(inode->i_mode)) {
 		debugf("%s is not a link", path);
 		rt = -EINVAL;
 		goto out;

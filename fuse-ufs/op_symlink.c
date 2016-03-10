@@ -32,15 +32,15 @@ int op_symlink (const char *sourcename, const char *destname)
 
 	/* a short symlink is stored in the inode (recycling the i_block array) */
 	if (sourcelen < ((NDADDR + NIADDR) * sizeof(__u32))) {
-		rt = do_create(ufs, destname, LINUX_S_IFLNK | 0777, 0, sourcename);
+		rt = do_create(ufs, destname, S_IFLNK | 0777, 0, sourcename);
 		if (rt != 0) {
-			debugf("do_create(%s, LINUX_S_IFLNK | 0777, FAST); failed", destname);
+			debugf("do_create(%s, S_IFLNK | 0777, FAST); failed", destname);
 			return rt;
 		}
 	} else {
-		rt = do_create(ufs, destname, LINUX_S_IFLNK | 0777, 0, NULL);
+		rt = do_create(ufs, destname, S_IFLNK | 0777, 0, NULL);
 		if (rt != 0) {
-			debugf("do_create(%s, LINUX_S_IFLNK | 0777); failed", destname);
+			debugf("do_create(%s, S_IFLNK | 0777); failed", destname);
 			return rt;
 		}
 		efile = do_open(ufs, destname, O_WRONLY);

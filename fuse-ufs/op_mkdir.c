@@ -198,7 +198,7 @@ int op_mkdir (const char *path, mode_t mode)
 	RETURN_IF_RDONLY(ufs);
 
 	debugf("enter");
-	debugf("path = %s, mode: 0%o, dir:0%o", path, mode, LINUX_S_IFDIR);
+	debugf("path = %s, mode: 0%o, dir:0%o", path, mode, S_IFDIR);
 
 	rt=do_check_split(path, &p_path ,&r_path);
 	if (rt != 0) {
@@ -242,7 +242,7 @@ int op_mkdir (const char *path, mode_t mode)
 	}
 	tm = ufs->now ? ufs->now : time(NULL);
 	inode = vnode2inode(child_vnode);
-	inode->i_mode = LINUX_S_IFDIR | mode;
+	inode->i_mode = S_IFDIR | mode;
 	inode->i_ctime = inode->i_atime = inode->i_mtime = tm;
 	ctx = fuse_get_context();
 	if (ctx) {

@@ -64,7 +64,7 @@ int op_unlink (const char *path)
 	}
 	r_inode = vnode2inode(r_vnode);
 
-	if(LINUX_S_ISDIR(r_inode->i_mode)) {
+	if(S_ISDIR(r_inode->i_mode)) {
 		debugf("%s is a directory", path);
 		vnode_put(r_vnode, 0);
 		free_split(p_path, r_path);

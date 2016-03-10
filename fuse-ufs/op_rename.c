@@ -135,10 +135,10 @@ int op_rename(const char *source, const char *dest)
 	/* EINVAL The  new  pathname  contained a path prefix of the old:
 		 this should be checked by fuse */
 	if (destrt == 0) {
-		if (LINUX_S_ISDIR(dest_inode->i_mode)) {
+		if (S_ISDIR(dest_inode->i_mode)) {
 			/* EISDIR newpath  is  an  existing directory, but oldpath is not a direc‐
 			   tory. */
-			if (!(LINUX_S_ISDIR(src_inode->i_mode))) {
+			if (!(S_ISDIR(src_inode->i_mode))) {
 				debugf("newpath is dir && oldpath is not a dir -> EISDIR");
 				rt = -EISDIR;
 				goto out_free_vnodes;
@@ -152,8 +152,8 @@ int op_rename(const char *source, const char *dest)
 		}
 		/* ENOTDIR: oldpath  is a directory, and newpath exists but is not a 
 			 directory */
-		if (LINUX_S_ISDIR(src_inode->i_mode) &&
-				!(LINUX_S_ISDIR(dest_inode->i_mode))) {
+		if (S_ISDIR(src_inode->i_mode) &&
+				!(S_ISDIR(dest_inode->i_mode))) {
 			debugf("oldpath is dir && newpath is not a dir -> ENOTDIR");
 			rt = -ENOTDIR;
 			goto out_free_vnodes;
@@ -170,7 +170,7 @@ int op_rename(const char *source, const char *dest)
 			goto out_free_vnodes;
 		}
 
-		if (LINUX_S_ISDIR(dest_inode->i_mode)) {
+		if (S_ISDIR(dest_inode->i_mode)) {
 			/* empty dir */
 			rt = do_killfilebyinode(ufs, dest_ino, inode2vnode(dest_inode));
 			if (rt) {
@@ -253,7 +253,7 @@ int op_rename(const char *source, const char *dest)
 
 	/* Special case: if moving dir across different parents 
 		 fix counters and '..' */
-	if (LINUX_S_ISDIR(src_inode->i_mode) && d_src_ino != d_dest_ino) {
+	if (S_ISDIR(src_inode->i_mode) && d_src_ino != d_dest_ino) {
 		vnode2inode(d_dest_vnode)->i_nlink++;
 		if (vnode2inode(d_src_vnode)->i_nlink > 1)
 			vnode2inode(d_src_vnode)->i_nlink--;

@@ -196,7 +196,7 @@ ufs_follow_link(uufsd_t *ufs, ino_t root, ino_t dir, ino_t inode, int link_count
 
 	inodep = vnode2inode(vnode);
 
-	if (!LINUX_S_ISLNK(inodep->i_mode)) {
+	if (!S_ISLNK(inodep->i_mode)) {
 		*res_inode = inode;
 		retval = 0;
 		goto out;

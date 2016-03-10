@@ -111,7 +111,7 @@ int op_rmdir (const char *path)
 	r_inode = vnode2inode(r_vnode);
 	p_inode = vnode2inode(p_vnode);
 
-	if (!LINUX_S_ISDIR(r_inode->i_mode)) {
+	if (!S_ISDIR(r_inode->i_mode)) {
 		debugf("%s is not a directory", path);
 		rt = -ENOTDIR;
 		goto out;
