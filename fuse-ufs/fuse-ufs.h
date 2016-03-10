@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program (in the main directory of the fuse-ext2
+ * along with this program (in the main directory of the fuse-ufs
  * distribution in the file COPYING); if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
@@ -59,10 +59,6 @@
 #error "***********************************************************"
 #endif
 
-/* extra definitions not yet included in ext2fs.h */
-#define EXT2_FILE_SHARED_INODE 0x8000
-errcode_t ext2fs_file_close2(ext2_file_t file, void (*close_callback) (struct ext2_inode *inode, int flags));
-
 #define DEV_BSIZE (1 << DEV_BSHIFT)
 #define	UFS_DIR_REC_LEN(namlen)						\
 	(((uintptr_t)&((struct direct *)0)->d_name +			\
@@ -80,8 +76,6 @@ errcode_t ext2fs_file_close2(ext2_file_t file, void (*close_callback) (struct ex
 	} while(0)
 
 #define UFS_FILE(efile) ((void *) (unsigned long) (efile))
-/* max timeout to flush bitmaps, to reduce inconsistencies */
-#define FLUSH_BITMAPS_TIMEOUT 10
 
 #define MIN(X, Y) X < Y ? X : Y
 
@@ -92,13 +86,11 @@ struct ufs_data {
 	unsigned char silent;
 	unsigned char force;
 	unsigned char readonly;
-	time_t last_flush;
 	char *mnt_point;
 	char *options;
 	char *device;
 	char *volname;
 	uufsd_t ufs;
-	ext2_filsys e2fs;
 };
 
 struct ufs_vnode {
@@ -119,18 +111,6 @@ static inline uufsd_t *current_ufs(void)
 	struct fuse_context *mycontext=fuse_get_context();
 	struct ufs_data *ufsdata=mycontext->private_data;
 	return (uufsd_t *)&(ufsdata->ufs);
-}
-
-static inline ext2_filsys current_ext2fs(void)
-{
-	struct fuse_context *mycontext=fuse_get_context();
-	struct ufs_data *e2data=mycontext->private_data;
-	time_t now=time(NULL);
-	if ((now - e2data->last_flush) > FLUSH_BITMAPS_TIMEOUT) {
-		ext2fs_write_bitmaps(e2data->e2fs);
-		e2data->last_flush=now;
-	}
-	return (ext2_filsys) e2data->e2fs;
 }
 
 #if ENABLE_DEBUG
@@ -183,7 +163,6 @@ static inline void debug_main_printf (const char *function, char *file, int line
 
 #endif /* ENABLE_DEBUG */
 
-struct ext2_vnode;
 
 struct ufs_vnode *vnode_get(uufsd_t *ufs, ino_t ino);
 
@@ -247,8 +226,6 @@ int op_release (const char *path, struct fuse_file_info *fi);
 int op_statfs(const char *path, struct statvfs *buf);
 
 /* write support */
-
-int do_modetoext2lag (mode_t mode);
 
 int op_chmod (const char *path, mode_t mode);
 
