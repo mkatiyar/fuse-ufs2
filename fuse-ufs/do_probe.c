@@ -24,7 +24,7 @@
 
 int do_probe (struct ufs_data *opts)
 {
-	errcode_t rc;
+	int rc;
 	uufsd_t ufs_disk;
 	struct fs *fs = &ufs_disk.d_fs;
 	char *buf;

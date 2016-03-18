@@ -22,7 +22,7 @@
 int op_unlink (const char *path)
 {
 	int rt;
-	errcode_t rc;
+	int rc;
 
 	char *p_path;
 	char *r_path;

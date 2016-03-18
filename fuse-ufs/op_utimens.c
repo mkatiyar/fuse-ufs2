@@ -22,7 +22,7 @@
 int op_utimens (const char *path, const struct timespec tv[2])
 {
 	int rt;
-	errcode_t rc;
+	int rc;
 	ino_t ino;
 	struct ufs_vnode *vnode;
 	struct inode *inode;

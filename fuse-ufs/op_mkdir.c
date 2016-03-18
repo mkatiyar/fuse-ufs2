@@ -23,7 +23,7 @@ static int ufs_new_dir_block(uufsd_t *ufs, ino_t dir_ino,
 		struct ufs_vnode *parent, char **block)
 {
 	struct direct 	*dir = NULL;
-	errcode_t		retval;
+	int		retval;
 	char			*buf;
 	int			rec_len;
 	struct fs *fs = &ufs->d_fs;
@@ -71,7 +71,7 @@ static int ufs_new_dir_block(uufsd_t *ufs, ino_t dir_ino,
 
 static int ufs_mkdir(uufsd_t *ufs, ino_t parent, ino_t inum, char *name)
 {
-	errcode_t		retval;
+	int		retval;
 	struct ufs_vnode	*parent_vnode = NULL, *vnode = NULL;
 	struct inode *parent_inode, *inode;
 	ino_t		ino = inum;
@@ -181,7 +181,7 @@ int op_mkdir (const char *path, mode_t mode)
 {
 	int rt;
 	time_t tm;
-	errcode_t rc;
+	int rc;
 
 	char *p_path;
 	char *r_path;

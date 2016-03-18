@@ -21,7 +21,7 @@
 
 int op_fsync (const char *path, int datasync, struct fuse_file_info *fi)
 {
-	errcode_t rc;
+	int rc;
 	uufsd_t *ufs = current_ufs();
 
 	RETURN_IF_RDONLY(ufs);

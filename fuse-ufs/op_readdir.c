@@ -62,7 +62,7 @@ static int walk_dir (struct direct *de, int offset, char *buf, void *priv_data)
 int op_readdir (const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
 {
 	int rt;
-	errcode_t rc;
+	int rc;
 	ino_t ino;
 	struct ufs_vnode *vnode;
 	struct dir_walk_data dwd={

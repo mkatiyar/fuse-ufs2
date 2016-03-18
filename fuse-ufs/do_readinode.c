@@ -99,7 +99,7 @@ copy_ondisk_to_incore(uufsd_t *ufsp, struct inode *inode,
 
 int do_readinode(uufsd_t *ufs, const char *path, ino_t *ino, struct inode *inode)
 {
-	errcode_t rc;
+	int rc;
 	int mode;
 	struct ufs2_dinode *dinop = NULL;
 

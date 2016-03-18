@@ -21,7 +21,7 @@
 
 void op_destroy (void *userdata)
 {
-	errcode_t rc;
+	int rc;
 	uufsd_t *ufs = current_ufs();
 	struct fs *fs = &ufs->d_fs;
 	int i;

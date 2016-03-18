@@ -22,7 +22,7 @@
 int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
 	__u64 pos;
-	errcode_t rc;
+	int rc;
 	unsigned int bytes;
 	ufs_file_t file = UFS_FILE(fi->fh);
 

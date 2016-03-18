@@ -21,7 +21,7 @@
 
 ufs_file_t do_open (uufsd_t *ufs, const char *path, int flags)
 {
-	errcode_t rc;
+	int rc;
 	ino_t ino;
 	ufs_file_t efile;
 	struct ufs_vnode *vnode;

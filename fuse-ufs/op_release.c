@@ -27,7 +27,7 @@ static void release_callback (struct ufs_vnode *vnode, int flags)
 
 int do_release (ufs_file_t file)
 {
-	errcode_t rc;
+	int rc;
 
 	debugf("enter");
 	debugf("path = (%p)", file);

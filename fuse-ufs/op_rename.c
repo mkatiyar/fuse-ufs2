@@ -43,7 +43,7 @@ static int fix_dotdot_proc (
 
 static int do_fix_dotdot(uufsd_t *ufs, ino_t ino, ino_t dotdot)
 {
-	errcode_t rc;
+	int rc;
 
 	debugf("enter");
 	rc = ufs_dir_iterate(ufs, ino, fix_dotdot_proc, &dotdot);
@@ -58,7 +58,7 @@ static int do_fix_dotdot(uufsd_t *ufs, ino_t ino, ino_t dotdot)
 int op_rename(const char *source, const char *dest)
 {
 	int rt = 0;
-	errcode_t rc;
+	int rc;
 	int destrt;
 
 	char *p_src;

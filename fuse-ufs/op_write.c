@@ -19,7 +19,7 @@
 
 #include "fuse-ufs.h"
 
-errcode_t ufs_file_set_size (ufs_file_t file, __u64 size);
+int ufs_file_set_size (ufs_file_t file, __u64 size);
 
 size_t do_write (ufs_file_t efile, const char *buf, size_t size, off_t offset)
 {

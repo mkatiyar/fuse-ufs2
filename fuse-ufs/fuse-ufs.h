@@ -266,7 +266,7 @@ int op_link (const char *source, const char *dest);
 int op_rename (const char *source, const char *dest);
 
 int ufs_namei(uufsd_t *ufs, ino_t root_ino, ino_t cur_ino, const char *filename, ino_t *ino);
-errcode_t ufs_bmap(uufsd_t *ufs, ino_t dirino, struct ufs_vnode *inode, blk_t fbn, ufs2_daddr_t *blkno);
+int ufs_bmap(uufsd_t *ufs, ino_t dirino, struct ufs_vnode *inode, blk_t fbn, ufs2_daddr_t *blkno);
 
 int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino,
                     int (*func)(
@@ -283,36 +283,36 @@ void copy_incore_to_ondisk(struct inode *inode, struct ufs2_dinode *dinop);
 void copy_ondisk_to_incore(uufsd_t *ufsp, struct inode *inode,
 			struct ufs2_dinode *dinop, ino_t ino);
 
-errcode_t ufs_write_new_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode);
-errcode_t ufs_write_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode);
-errcode_t ufs_new_inode(uufsd_t *ufs, ino_t parent_ino, mode_t mode,
+int ufs_write_new_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode);
+int ufs_write_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode);
+int ufs_new_inode(uufsd_t *ufs, ino_t parent_ino, mode_t mode,
 			void *ino_bitmap, ino_t *newinum);
-errcode_t ufs_unlink(uufsd_t *ufs, ino_t d_dest_ino, char *r_dest, ino_t src_ino, int flags);
-errcode_t ufs_link(uufsd_t *ufs, ino_t dir_ino, char *r_dest, struct ufs_vnode *vnode, int mode);
+int ufs_unlink(uufsd_t *ufs, ino_t d_dest_ino, char *r_dest, ino_t src_ino, int flags);
+int ufs_link(uufsd_t *ufs, ino_t dir_ino, char *r_dest, struct ufs_vnode *vnode, int mode);
 
-errcode_t ufs_file_write(ufs_file_t file, const void *buf,
+int ufs_file_write(ufs_file_t file, const void *buf,
 			 unsigned int nbytes, unsigned int *written);
 
-errcode_t ufs_file_flush(ufs_file_t file);
-errcode_t ufs_file_lseek(ufs_file_t file, __u64 offset, int whence, __u64 *ret_pos);
-errcode_t ufs_file_get_size(ufs_file_t file, __u64 *ret_size);
-errcode_t ufs_file_read(ufs_file_t file, void *buf, unsigned int wanted,
+int ufs_file_flush(ufs_file_t file);
+int ufs_file_lseek(ufs_file_t file, __u64 offset, int whence, __u64 *ret_pos);
+int ufs_file_get_size(ufs_file_t file, __u64 *ret_size);
+int ufs_file_read(ufs_file_t file, void *buf, unsigned int wanted,
 			unsigned int *got);
-errcode_t ufs_block_alloc(uufsd_t *ufs, struct inode* inode, int size, ufs2_daddr_t *blkno);
-errcode_t ufs_set_block(uufsd_t *fs, struct inode *inode, blk_t fbn, ufs2_daddr_t blockno);
-errcode_t ufs_truncate(uufsd_t *ufs, struct ufs_vnode *vnode, int newsize);
+int ufs_block_alloc(uufsd_t *ufs, struct inode* inode, int size, ufs2_daddr_t *blkno);
+int ufs_set_block(uufsd_t *fs, struct inode *inode, blk_t fbn, ufs2_daddr_t blockno);
+int ufs_truncate(uufsd_t *ufs, struct ufs_vnode *vnode, int newsize);
 void ufs_block_free( uufsd_t *ufs, struct ufs_vnode *vnode, ufs2_daddr_t bno,
 			long size, ino_t inum);
-errcode_t ufs_file_open2(uufsd_t *fs, ino_t ino, struct ufs_vnode *vnode,
+int ufs_file_open2(uufsd_t *fs, ino_t ino, struct ufs_vnode *vnode,
 			    int flags, ufs_file_t *ret);
-errcode_t ufs_file_set_size(ufs_file_t file, __u64 size);
+int ufs_file_set_size(ufs_file_t file, __u64 size);
 int ufs_free_inode(uufsd_t *ufs, struct ufs_vnode *vnode, ino_t ino, int mode);
 ufs2_daddr_t ufs_inode_alloc(struct inode *ip, int cg, ufs2_daddr_t ipref, int mode);
 typedef ufs2_daddr_t allocfunc_t(struct inode *ip, int cg, ufs2_daddr_t bpref, int size);
 ufs2_daddr_t
 ufs_hashalloc(struct inode *ip, int cg, int pref, int size, allocfunc_t allocator);
 int ufs_inode_io_size(struct inode *inode, int offset, int write);
-errcode_t ufs_set_rec_len(uufsd_t *ufs, unsigned int len, struct direct *dirent);
+int ufs_set_rec_len(uufsd_t *ufs, unsigned int len, struct direct *dirent);
 ufs2_daddr_t ufs_inode_alloc(struct inode *ip, int cg, ufs2_daddr_t ipref, int mode);
 int ufs_expand_dir(uufsd_t *ufs, ino_t d_ino);
 int ufs_valloc( struct ufs_vnode *pvp, int mode, struct ufs_vnode **vnodepp);

@@ -458,7 +458,7 @@ ufs_hashalloc(struct inode *ip, int cg, int pref, int size, allocfunc_t allocato
 /* Allocate a block for inode number ino. nfrags must be less than
  * what a block can hold.
  */
-errcode_t
+int
 ufs_block_alloc(uufsd_t *ufs, struct inode* inode, int size, ufs2_daddr_t *blkno)
 {
 	struct fs *fs = &ufs->d_fs;
@@ -614,7 +614,7 @@ ufs_block_free(
 }
 
 
-errcode_t
+int
 ufs_clear_indirect(uufsd_t *fs, struct inode *inode, blk_t fbn)
 {
 	int nindir = fs->d_fs.fs_nindir;
@@ -700,7 +700,7 @@ ufs_clear_indirect(uufsd_t *fs, struct inode *inode, blk_t fbn)
 	return 0;
 }
 
-errcode_t
+int
 ufs_truncate(uufsd_t *ufs, struct ufs_vnode *vnode, int newsize)
 {
 	struct inode *inode = vnode2inode(vnode);
@@ -834,7 +834,7 @@ ufs_truncate(uufsd_t *ufs, struct ufs_vnode *vnode, int newsize)
 	return retval;
 }
 
-errcode_t
+int
 ufs_write_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode)
 {
 	struct ufs2_dinode *dinop = NULL;
@@ -864,12 +864,12 @@ struct link_struct  {
 	int		flags;
 	int		done;
 	unsigned int	blocksize;
-	errcode_t	err;
+	int		err;
 };
 
 #define MAX_RECLEN ((1<<16)-1)
 
-static errcode_t ufs_get_rec_len(uufsd_t *ufs,
+static int ufs_get_rec_len(uufsd_t *ufs,
 			  struct direct *dirent,
 			  unsigned int *rec_len)
 {
@@ -886,7 +886,7 @@ static errcode_t ufs_get_rec_len(uufsd_t *ufs,
 	return 0;
 }
 
-errcode_t ufs_set_rec_len(uufsd_t *ufs,
+int ufs_set_rec_len(uufsd_t *ufs,
 			  unsigned int len,
 			  struct direct *dirent)
 {
@@ -978,11 +978,11 @@ static int link_proc(struct direct *dirent,
 	return DIRENT_ABORT|DIRENT_CHANGED;
 }
 
-errcode_t
+int
 ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 		ino_t ino, int flags)
 {
-	errcode_t		retval;
+	int			retval;
 	struct link_struct	ls;
 	struct fs *fs = &ufs->d_fs;
 
@@ -1009,7 +1009,7 @@ ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 	return 0;
 }
 
-errcode_t
+int
 ufs_link(uufsd_t *ufs, ino_t dir_ino, char *r_dest, struct ufs_vnode *vnode, int mode)
 {
 	struct inode *ip;
@@ -1085,7 +1085,7 @@ static int unlink_proc(struct direct *dirent,
 	return DIRENT_ABORT|DIRENT_CHANGED;
 }
 
-errcode_t
+int
 ufs_unlink(uufsd_t *ufs, ino_t dir_ino, char *name, ino_t file_ino, int flags)
 {
 	struct unlink_struct ls;

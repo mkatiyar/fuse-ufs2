@@ -49,7 +49,7 @@ static int rmdir_proc (struct direct *dirent, int offset,
 
 int do_check_empty_dir(uufsd_t *ufs, ino_t ino)
 {
-	errcode_t rc;
+	int rc;
 	int empty = 1;
 
 	rc = ufs_dir_iterate(ufs, ino, rmdir_proc, &empty);
@@ -69,7 +69,7 @@ int do_check_empty_dir(uufsd_t *ufs, ino_t ino)
 int op_rmdir (const char *path)
 {
 	int rt;
-	errcode_t rc;
+	int rc;
 
 	char *p_path;
 	char *r_path;

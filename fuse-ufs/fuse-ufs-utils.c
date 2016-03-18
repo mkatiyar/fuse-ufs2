@@ -184,7 +184,7 @@ ufs_follow_link(uufsd_t *ufs, ino_t root, ino_t dir, ino_t inode, int link_count
 {
 	char *pathname;
 	char *buffer = 0;
-	errcode_t retval;
+	int retval;
 	struct ufs_vnode *vnode;
 	struct inode *inodep;
 	int blocksize = ufs->d_fs.fs_bsize;

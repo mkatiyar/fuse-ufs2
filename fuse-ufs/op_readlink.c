@@ -23,7 +23,7 @@ int op_readlink (const char *path, char *buf, size_t size)
 {
 	int rt;
 	size_t s;
-	errcode_t rc;
+	int rc;
 	ino_t ino;
 	char *b = NULL;
 	char *pathname;

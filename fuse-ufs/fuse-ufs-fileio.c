@@ -58,12 +58,12 @@ ufs_io_size(ufs_file_t file, int offset, int write)
 	return ufs_inode_io_size(vnode2inode(file->inode), offset, write);
 }
 
-errcode_t ufs_file_open2(uufsd_t *fs, ino_t ino,
+int ufs_file_open2(uufsd_t *fs, ino_t ino,
 			    struct ufs_vnode *vnode,
 			    int flags, ufs_file_t *ret)
 {
 	ufs_file_t 	file;
-	errcode_t	retval;
+	int		retval;
 
 	/*
 	 * Don't let caller create or open a file for writing if the
@@ -115,7 +115,7 @@ fail_inode_alloc:
 	return retval;
 }
 
-errcode_t ufs_file_open(uufsd_t * fs, ino_t ino,
+int ufs_file_open(uufsd_t * fs, ino_t ino,
 			   int flags, ufs_file_t *ret)
 {
 	return ufs_file_open2(fs, ino, NULL, flags & ~(UFS_FILE_SHARED_INODE), ret);
@@ -131,7 +131,7 @@ uufsd_t * ufs_file_get_fs(ufs_file_t file)
 	return file->fs;
 }
 
-errcode_t
+int
 ufs_set_block(uufsd_t *fs, struct inode *inode, blk_t fbn, ufs2_daddr_t blockno)
 {
 	ufs2_daddr_t tempblock = 0;
@@ -287,9 +287,9 @@ ufs_set_block(uufsd_t *fs, struct inode *inode, blk_t fbn, ufs2_daddr_t blockno)
  * This function flushes the dirty block buffer out to disk if
  * necessary.
  */
-errcode_t ufs_file_flush(ufs_file_t file)
+int ufs_file_flush(ufs_file_t file)
 {
-	errcode_t	retval;
+	int	retval;
 	uufsd_t * fs = file->fs;
 	struct inode *inode = vnode2inode(file->inode);
 	int oldfilesize = UFS_DINODE(inode)->di_size;
@@ -353,10 +353,10 @@ again:
  * This function synchronizes the file's block buffer and the current
  * file position, possibly invalidating block buffer if necessary
  */
-static errcode_t sync_buffer_position(ufs_file_t file)
+static int sync_buffer_position(ufs_file_t file)
 {
 	blk_t	b;
-	errcode_t	retval;
+	int	retval;
 
 	b = lblkno(&(file->fs->d_fs), file->pos);
 	if (b != file->blockno) {
@@ -369,7 +369,7 @@ static errcode_t sync_buffer_position(ufs_file_t file)
 	return 0;
 }
 
-errcode_t
+int
 ufs_bmap(uufsd_t *fs, ino_t ino, struct ufs_vnode *vnode, blk_t fbn, ufs2_daddr_t *pbno)
 {
 	int ret, blksize = fs->d_fs.fs_bsize;
@@ -473,10 +473,10 @@ ufs_bmap(uufsd_t *fs, ino_t ino, struct ufs_vnode *vnode, blk_t fbn, ufs2_daddr_
  * function basically only sets file->physblock and UFS_FILE_BUF_VALID
  */
 #define DONTFILL 1
-static errcode_t load_buffer(ufs_file_t file, int dontfill)
+static int load_buffer(ufs_file_t file, int dontfill)
 {
 	uufsd_t *	fs = file->fs;
-	errcode_t	retval;
+	int	retval;
 	int fsize;
 
 	if (!(file->flags & UFS_FILE_BUF_VALID)) {
@@ -504,9 +504,9 @@ static errcode_t load_buffer(ufs_file_t file, int dontfill)
 }
 
 
-errcode_t ufs_file_close2 (ufs_file_t file, void (*close_callback) (struct ufs_vnode *inode, int flags))
+int ufs_file_close2 (ufs_file_t file, void (*close_callback) (struct ufs_vnode *inode, int flags))
 {
-	errcode_t retval;
+	int retval;
 
 	debugf("enter");
 
@@ -532,17 +532,17 @@ errcode_t ufs_file_close2 (ufs_file_t file, void (*close_callback) (struct ufs_v
 	return retval;
 }
 
-errcode_t ufs_file_close(ufs_file_t file)
+int ufs_file_close(ufs_file_t file)
 {
 	return ufs_file_close2(file, NULL);
 }
 
-errcode_t ufs_file_read(ufs_file_t file, void *buf,
+int ufs_file_read(ufs_file_t file, void *buf,
 			   unsigned int wanted, unsigned int *got)
 {
 	debugf("enter");
 	uufsd_t *	fs;
-	errcode_t	retval = 0;
+	int		retval = 0;
 	unsigned int	start, c, count = 0;
 	__u64		left;
 	char		*ptr = (char *) buf;
@@ -580,11 +580,11 @@ fail:
 }
 
 
-errcode_t ufs_file_write(ufs_file_t file, const void *buf,
+int ufs_file_write(ufs_file_t file, const void *buf,
 			    unsigned int nbytes, unsigned int *written)
 {
 	uufsd_t *	fs;
-	errcode_t	retval = 0;
+	int		retval = 0;
 	unsigned int	start, c, count = 0;
 	const char	*ptr = (const char *) buf;
 
@@ -626,7 +626,7 @@ fail:
 	return retval;
 }
 
-errcode_t ufs_file_lseek(ufs_file_t file, __u64 offset,
+int ufs_file_lseek(ufs_file_t file, __u64 offset,
 			    int whence, __u64 *ret_pos)
 {
 	struct inode *inode = vnode2inode(file->inode);
@@ -648,7 +648,7 @@ errcode_t ufs_file_lseek(ufs_file_t file, __u64 offset,
 /*
  * This function returns the size of the file, according to the inode
  */
-errcode_t ufs_file_get_size(ufs_file_t file, __u64 *ret_size)
+int ufs_file_get_size(ufs_file_t file, __u64 *ret_size)
 {
 	struct inode *inode = vnode2inode(file->inode);
 	if (file->magic != UFS_MAGIC_FILE)
@@ -661,7 +661,7 @@ errcode_t ufs_file_get_size(ufs_file_t file, __u64 *ret_size)
  * This function sets the size of the file, truncating it if necessary
  *
  */
-errcode_t ufs_file_set_size(ufs_file_t file, __u64 size)
+int ufs_file_set_size(ufs_file_t file, __u64 size)
 {
 	struct inode *inode = vnode2inode(file->inode);
 	int retval = 0;

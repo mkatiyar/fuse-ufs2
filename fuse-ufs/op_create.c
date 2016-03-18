@@ -60,7 +60,7 @@ int do_create (uufsd_t *ufs, const char *path, mode_t mode, dev_t dev, const cha
 {
 	int rt;
 	time_t tm;
-	errcode_t rc;
+	int rc;
 
 	char *p_path;
 	char *r_path;

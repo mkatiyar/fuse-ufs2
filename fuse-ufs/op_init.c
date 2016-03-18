@@ -22,7 +22,7 @@
 
 void * op_init (struct fuse_conn_info *conn)
 {
-	errcode_t rc;
+	int rc;
 	struct fuse_context *cntx=fuse_get_context();
 	struct ufs_data *ufsdata=cntx->private_data;
 	struct fs *fs;

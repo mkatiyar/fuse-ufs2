@@ -21,7 +21,7 @@
 
 int op_flush (const char *path, struct fuse_file_info *fi)
 {
-	errcode_t rc;
+	int rc;
 	ufs_file_t file = UFS_FILE(fi->fh);
 
 	debugf("enter");
