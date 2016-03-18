@@ -305,6 +305,8 @@ void ufs_block_free( uufsd_t *ufs, struct ufs_vnode *vnode, ufs2_daddr_t bno,
 			long size, ino_t inum);
 int ufs_file_open2(uufsd_t *fs, ino_t ino, struct ufs_vnode *vnode,
 			    int flags, ufs_file_t *ret);
+int ufs_file_close2(ufs_file_t file,
+		    void (*close_callback) (struct ufs_vnode *inode, int flags));
 int ufs_file_set_size(ufs_file_t file, __u64 size);
 int ufs_free_inode(uufsd_t *ufs, struct ufs_vnode *vnode, ino_t ino, int mode);
 ufs2_daddr_t ufs_inode_alloc(struct inode *ip, int cg, ufs2_daddr_t ipref, int mode);
