@@ -22,7 +22,6 @@
 int op_unlink (const char *path)
 {
 	int rt;
-	int rc;
 
 	char *p_path;
 	char *r_path;
@@ -71,8 +70,8 @@ int op_unlink (const char *path)
 		return -EISDIR;
 	}
 
-	rc = ufs_unlink(ufs, p_ino, r_path, r_ino, 0);
-	if (rc) {
+	rt = ufs_unlink(ufs, p_ino, r_path, r_ino, 0);
+	if (rt) {
 		debugf("ufs_unlink(ufs, %d, %s, %d, 0); failed", p_ino, r_path, r_ino);
 		vnode_put(r_vnode, 0);
 		vnode_put(p_vnode, 0);
@@ -86,8 +85,8 @@ int op_unlink (const char *path)
 
 	p_inode = vnode2inode(p_vnode);
 	p_inode->i_ctime = p_inode->i_mtime = ufs->now ? ufs->now : time(NULL);
-	rc = vnode_put(p_vnode, 1);
-	if (rc) {
+	rt = vnode_put(p_vnode, 1);
+	if (rt) {
 		debugf("ufs_write_inode(ufs, p_ino, &p_inode); failed");
 		vnode_put(r_vnode,1);
 		free_split(p_path, r_path);
@@ -95,8 +94,8 @@ int op_unlink (const char *path)
 	}
 
 	r_inode->i_ctime = ufs->now ? ufs->now : time(NULL);
-	rc = vnode_put(r_vnode, 1);
-	if (rc) {
+	rt = vnode_put(r_vnode, 1);
+	if (rt) {
 		debugf("vnode_put(r_vnode, 1); failed");
 		free_split(p_path, r_path);
 		return -EIO;

@@ -62,7 +62,6 @@ static int walk_dir (struct direct *de, int offset, char *buf, void *priv_data)
 int op_readdir (const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
 {
 	int rt;
-	int rc;
 	ino_t ino;
 	struct ufs_vnode *vnode;
 	struct dir_walk_data dwd={
@@ -79,8 +78,8 @@ int op_readdir (const char *path, void *buf, fuse_fill_dir_t filler, off_t offse
 		return rt;
 	}
 
-	rc = ufs_dir_iterate(ufs, ino, walk_dir, &dwd);
-	if (rc) {
+	rt = ufs_dir_iterate(ufs, ino, walk_dir, &dwd);
+	if (rt) {
 		debugf("Error while trying to ufs_dir_iterate %s", path);
 		vnode_put(vnode, 0);
 		return -EIO;

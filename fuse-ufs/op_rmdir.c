@@ -69,7 +69,6 @@ int do_check_empty_dir(uufsd_t *ufs, ino_t ino)
 int op_rmdir (const char *path)
 {
 	int rt;
-	int rc;
 
 	char *p_path;
 	char *r_path;
@@ -128,8 +127,8 @@ int op_rmdir (const char *path)
 		goto out;
 	}
 
-	rc = ufs_unlink(ufs, p_ino, r_path, r_ino, 0);
-	if (rc) {
+	rt = ufs_unlink(ufs, p_ino, r_path, r_ino, 0);
+	if (rt) {
 		debugf("while unlinking ino %d", (int) r_ino);
 		rt = -EIO;
 		goto out;

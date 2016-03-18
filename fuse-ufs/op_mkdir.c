@@ -181,7 +181,6 @@ int op_mkdir (const char *path, mode_t mode)
 {
 	int rt;
 	time_t tm;
-	int rc;
 
 	char *p_path;
 	char *r_path;
@@ -217,8 +216,8 @@ int op_mkdir (const char *path, mode_t mode)
 
 	do {
 		debugf("calling ufs_mkdir(ufs, %d, 0, %s);", ino, r_path);
-		rc = ufs_mkdir(ufs, ino, 0, r_path);
-		if (rc == ENOSPC) {
+		rt = ufs_mkdir(ufs, ino, 0, r_path);
+		if (rt == ENOSPC) {
 			debugf("calling ufs_expand_dir(ufs, &d)", ino);
 			/*
 			if (ufs_expand_dir(ufs, ino)) {
@@ -228,9 +227,9 @@ int op_mkdir (const char *path, mode_t mode)
 			}
 			*/
 		}
-	} while (rc == ENOSPC);
-	if (rc) {
-		debugf("ufs_mkdir(ufs, %d, 0, %s); failed (%d)", ino, r_path, rc);
+	} while (rt == ENOSPC);
+	if (rt) {
+		debugf("ufs_mkdir(ufs, %d, 0, %s); failed (%d)", ino, r_path, rt);
 		free_split(p_path, r_path);
 		return -EIO;
 	}

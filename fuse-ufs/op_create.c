@@ -60,7 +60,6 @@ int do_create (uufsd_t *ufs, const char *path, mode_t mode, dev_t dev, const cha
 {
 	int rt;
 	time_t tm;
-	int rc;
 
 	char *p_path;
 	char *r_path;
@@ -87,16 +86,16 @@ int do_create (uufsd_t *ufs, const char *path, mode_t mode, dev_t dev, const cha
 		return rt;
 	}
 
-	rc = ufs_valloc(dirnode, mode, &vnode);
-	if (rc) {
+	rt = ufs_valloc(dirnode, mode, &vnode);
+	if (rt) {
 		debugf("ufs_new_inode(ep.fs, ino, mode, 0, &n_ino); failed");
 		ret = -ENOMEM;
 		goto out;
 	}
 
 	do {
-		rc = ufs_link(ufs, ino, r_path, vnode, mode);
-		if (rc == ENOSPC) {
+		rt = ufs_link(ufs, ino, r_path, vnode, mode);
+		if (rt == ENOSPC) {
 			debugf("calling ufs_expand_dir(ufs, &d)", ino);
 			if (ufs_expand_dir(ufs, ino)) {
 				debugf("error while expanding directory %s (%d)", p_path, ino);
@@ -104,8 +103,8 @@ int do_create (uufsd_t *ufs, const char *path, mode_t mode, dev_t dev, const cha
 				return ENOSPC;
 			}
 		}
-	} while (rc == ENOSPC);
-	if (rc) {
+	} while (rt == ENOSPC);
+	if (rt) {
 		ret = -EIO;
 		goto out;
 	}
