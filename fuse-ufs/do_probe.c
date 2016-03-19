@@ -55,7 +55,7 @@ int do_probe (struct ufs_data *opts)
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
-		if ((error = bread(&ufs_disk, fsbtodb(fs, fs->fs_csaddr + i), (void *)buf, size)) != 0) {
+		if ((error = bread(&ufs_disk, fsbtodb(fs, fs->fs_csaddr + i), (void *)buf, size)) == -1) {
 			free(fs->fs_csp);
 			goto out;
 		}
