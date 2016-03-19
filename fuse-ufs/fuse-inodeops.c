@@ -720,7 +720,7 @@ ufs_truncate(uufsd_t *ufs, struct ufs_vnode *vnode, int newsize)
 	l0 = l1 = l2 = l3 = 0;
 
 	for (i = old_fbn ; (int)i >= new_fbn; i--) {
-		retval = ufs_bmap(ufs, inode->i_ino, vnode, i, &blkno);
+		retval = ufs_bmap(ufs, vnode, i, &blkno);
 		if (retval) {
 			return retval;
 		}

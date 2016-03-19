@@ -266,7 +266,7 @@ int op_link (const char *source, const char *dest);
 int op_rename (const char *source, const char *dest);
 
 int ufs_namei(uufsd_t *ufs, ino_t root_ino, ino_t cur_ino, const char *filename, ino_t *ino);
-int ufs_bmap(uufsd_t *ufs, ino_t dirino, struct ufs_vnode *inode, blk_t fbn, ufs2_daddr_t *blkno);
+int ufs_bmap(uufsd_t *ufs, struct ufs_vnode *inode, blk_t fbn, ufs2_daddr_t *blkno);
 
 int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino,
                     int (*func)(

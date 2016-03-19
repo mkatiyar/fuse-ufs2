@@ -370,7 +370,7 @@ static int sync_buffer_position(ufs_file_t file)
 }
 
 int
-ufs_bmap(uufsd_t *fs, ino_t ino, struct ufs_vnode *vnode, blk_t fbn, ufs2_daddr_t *pbno)
+ufs_bmap(uufsd_t *fs, struct ufs_vnode *vnode, blk_t fbn, ufs2_daddr_t *pbno)
 {
 	int ret, blksize = fs->d_fs.fs_bsize;
 	char *blockbuf = 0;
@@ -480,7 +480,7 @@ static int load_buffer(ufs_file_t file, int dontfill)
 	int fsize;
 
 	if (!(file->flags & UFS_FILE_BUF_VALID)) {
-		retval = ufs_bmap(fs, file->ino, file->inode,
+		retval = ufs_bmap(fs, file->inode,
 				     file->blockno,
 				     &file->physblock);
 

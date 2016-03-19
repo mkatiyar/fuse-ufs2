@@ -81,7 +81,7 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino,
 	ndb = howmany(dir_size, ufs->d_fs.fs_bsize);
 	int offset, pos = 0;
 	for (i = 0; i < ndb ; i++) {
-		ret = ufs_bmap(ufs, dirino, vnode, i, &blkno);
+		ret = ufs_bmap(ufs, vnode, i, &blkno);
 		if (ret) {
 			ret = -EIO;
 			goto out;
