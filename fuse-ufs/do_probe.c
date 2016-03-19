@@ -28,7 +28,7 @@ int do_probe (struct ufs_data *opts)
 	uufsd_t ufs_disk;
 	struct fs *fs = &ufs_disk.d_fs;
 	char *buf;
-	int i, error;
+	int i;
 
 	rc = ufs_disk_fillout(&ufs_disk, opts->device);
 	if (rc == -1) {
@@ -55,7 +55,7 @@ int do_probe (struct ufs_data *opts)
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
-		if ((error = bread(&ufs_disk, fsbtodb(fs, fs->fs_csaddr + i), (void *)buf, size)) == -1) {
+		if (bread(&ufs_disk, fsbtodb(fs, fs->fs_csaddr + i), (void *)buf, size) == -1) {
 			free(fs->fs_csp);
 			goto out;
 		}

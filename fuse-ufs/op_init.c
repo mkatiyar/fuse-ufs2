@@ -27,7 +27,7 @@ void * op_init (struct fuse_conn_info *conn)
 	struct ufs_data *ufsdata=cntx->private_data;
 	struct fs *fs;
 	char *buf;
-	int i, error;
+	int i;
 
 	debugf("enter %s", ufsdata->device);
 
@@ -57,7 +57,7 @@ void * op_init (struct fuse_conn_info *conn)
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
-		if ((error = bread(&ufsdata->ufs, fsbtodb(fs, fs->fs_csaddr + i), (void *)buf, size)) == -1) {
+		if (bread(&ufsdata->ufs, fsbtodb(fs, fs->fs_csaddr + i), (void *)buf, size) == -1) {
 			free(fs->fs_csp);
 			exit(1);
 		}
