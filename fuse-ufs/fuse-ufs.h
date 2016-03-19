@@ -283,10 +283,8 @@ void copy_incore_to_ondisk(struct inode *inode, struct ufs2_dinode *dinop);
 void copy_ondisk_to_incore(uufsd_t *ufsp, struct inode *inode,
 			struct ufs2_dinode *dinop, ino_t ino);
 
-int ufs_write_new_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode);
 int ufs_write_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode);
-int ufs_new_inode(uufsd_t *ufs, ino_t parent_ino, mode_t mode,
-			void *ino_bitmap, ino_t *newinum);
+
 int ufs_unlink(uufsd_t *ufs, ino_t d_dest_ino, char *r_dest, ino_t src_ino, int flags);
 int ufs_link(uufsd_t *ufs, ino_t dir_ino, char *r_dest, struct ufs_vnode *vnode, int mode);
 

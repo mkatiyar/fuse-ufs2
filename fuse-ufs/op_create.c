@@ -88,7 +88,7 @@ int do_create (uufsd_t *ufs, const char *path, mode_t mode, dev_t dev, const cha
 
 	rt = ufs_valloc(dirnode, mode, &vnode);
 	if (rt) {
-		debugf("ufs_new_inode(ep.fs, ino, mode, 0, &n_ino); failed");
+		debugf("ufs_valloc(dirnode, mode, &vnode); failed");
 		ret = -ENOMEM;
 		goto out;
 	}
