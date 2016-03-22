@@ -867,22 +867,11 @@ struct link_struct  {
 	int		err;
 };
 
-#define MAX_RECLEN ((1<<16)-1)
-
 static int ufs_get_rec_len(uufsd_t *ufs,
 			  struct direct *dirent,
 			  unsigned int *rec_len)
 {
-	unsigned int len = dirent->d_reclen;
-
-	/*
-	struct fs *fs = &ufs->d_fs;
-	if (len == MAX_RECLEN || len == 0)
-		*rec_len = fs->fs_bsize;
-	else
-		*rec_len = (len & 65532) | ((len & 3) << 16);
-		*/
-	*rec_len = len;
+	*rec_len = dirent->d_reclen;
 	return 0;
 }
 
@@ -890,20 +879,7 @@ int ufs_set_rec_len(uufsd_t *ufs,
 			  unsigned int len,
 			  struct direct *dirent)
 {
-	struct fs *fs = &ufs->d_fs;
-	if ((len > fs->fs_bsize) || (fs->fs_bsize > (1 << 18)) || (len & 3))
-		return EINVAL;
-	if (len < 65536) {
-		dirent->d_reclen = len;
-		return 0;
-	}
-	if (len == fs->fs_bsize) {
-		if (fs->fs_bsize == 65536)
-			dirent->d_reclen = MAX_RECLEN;
-		else
-			dirent->d_reclen = 0;
-	} else
-		dirent->d_reclen = (len & 65532) | ((len >> 16) & 3);
+	dirent->d_reclen = len;
 	return 0;
 }
 
