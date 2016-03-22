@@ -885,13 +885,12 @@ int ufs_set_rec_len(uufsd_t *ufs,
 
 static int link_proc(struct direct *dirent,
 		     int	offset,
-	//	     int	blocksize,
 		     char	*buf,
 		     void	*priv_data)
 {
 	struct link_struct *ls = (struct link_struct *) priv_data;
 	struct direct *next;
-	int blocksize = ls->ufs->d_fs.fs_bsize;
+	int blocksize = ls->blocksize;
 	unsigned int rec_len, min_rec_len, curr_rec_len;
 	int ret = 0;
 
@@ -960,7 +959,6 @@ ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 {
 	int			retval;
 	struct link_struct	ls;
-	struct fs *fs = &ufs->d_fs;
 
 	RETURN_IF_RDONLY(ufs);
 
@@ -970,7 +968,7 @@ ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 	ls.inode = ino;
 	ls.flags = flags;
 	ls.done = 0;
-	ls.blocksize = fs->fs_bsize;
+	ls.blocksize = DIRBLKSIZ;
 	ls.err = 0;
 
 	retval = ufs_dir_iterate(ufs, dir, link_proc, &ls);

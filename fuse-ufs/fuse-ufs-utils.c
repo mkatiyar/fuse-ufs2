@@ -95,7 +95,14 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino,
 		offset = 0;
 		while (offset < blksize && pos + offset < dir_size) {
 			struct direct *de = (struct direct *)(dirbuf + offset);
-			ret = (*func)(de, offset, dirbuf, priv_data);
+
+			/* HACK: Restrict frame for func() operations
+			 *       to blocks of DIRBLKSIZ bytes
+			 */
+			int    blockoff = offset % DIRBLKSIZ;
+			char * dirblock = dirbuf + (offset-blockoff);
+
+			ret = (*func)(de, blockoff, dirblock, priv_data);
 			if (ret & DIRENT_CHANGED) {
 				if (blkwrite(ufs, fsbtodb(&ufs->d_fs, blkno), dirbuf, blksize) == -1) {
 					debugf("Unable to write block %d\n",blkno);
