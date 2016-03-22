@@ -22,7 +22,6 @@
 static int fix_dotdot_proc (
 		struct direct *dirent,
 		int offset,
-		int blocksize,
 		char *buf, void *private)
 {
 	ino_t *p_dotdot = (ino_t *) private;
