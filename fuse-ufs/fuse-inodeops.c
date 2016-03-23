@@ -1147,7 +1147,126 @@ ufs_free_inode(uufsd_t *ufs, struct ufs_vnode *vnode, ino_t ino, int mode)
 	return (0);
 }
 
+
+/* Clear directory block of given size:
+ * Initialize a single unused entry spanning the entire block
+ */
+static void ufs_clear_dir_block(uufsd_t *ufs, char *buf, u_int16_t size)
+{
+	struct direct * de = (struct direct *)buf;
+
+	memset(buf, 0, size);
+
+	de->d_ino    = 0;    /* unused entry */
+	de->d_reclen = size; /* spanning entire block */
+	de->d_type   = DT_UNKNOWN;
+	de->d_namlen = 0;
+}
+
+/* Add one DIRBLKSIZ block to directory */
 int ufs_expand_dir(uufsd_t *ufs, ino_t d_ino)
 {
-	return 0;
+	struct fs *fs = &ufs->d_fs;
+	u_int16_t dir_blksize = DIRBLKSIZ; /* to become property of 'ufs' arg */
+
+	int err = 0;
+	char *dir_buf = NULL;
+
+	struct ufs_vnode *vnode = vnode_get(ufs, d_ino);
+	if (vnode == NULL) {
+		err = -ENOMEM;
+		goto out;
+	}
+	struct inode *inode = vnode2inode(vnode);
+
+	/* Old and new directory size */
+	ufs2_daddr_t old_size = inode->i_size;
+	ufs2_daddr_t new_size = old_size + dir_blksize;
+
+	/* We shall touch nothing but the last
+	   fs_bsize block of directory contents
+	 */
+	ufs2_daddr_t dir_blkno = lblkno(fs, old_size);
+	/* assert(dir_blkno == lblkno(fs, new_size-1)); */
+
+	/* Bytes currently present in that block */
+	size_t old_bytes = blkoff(fs, old_size);
+
+	/* Bytes to be occupied in that block */
+	size_t new_bytes = blkoff(fs, new_size-1)+1;
+
+	/* Sizes rounded up to fs_fsize fragments */
+	size_t old_fragsiz = fragroundup(fs, old_bytes);
+	size_t new_fragsiz = fragroundup(fs, new_bytes);
+
+	/* Filesystem block number (lookup done later) */
+	ufs2_daddr_t fs_blkno = 0;
+
+	dir_buf = malloc(new_bytes);
+	if (!dir_buf) {
+		err = -ENOMEM;
+		goto out;
+	}
+
+	/* Load directory blocks already present in fs block */
+	if (old_bytes > 0) {
+
+		if (ufs_bmap(ufs, vnode, dir_blkno, &fs_blkno) != 0) {
+			err = -EIO;
+			goto out;
+		}
+
+		if (blkread(ufs, fsbtodb(fs, fs_blkno), dir_buf, old_bytes) == -1) {
+			debugf("Unable to read block %d\n", fs_blkno);
+			err = -EIO;
+			goto out;
+		}
+
+	}
+
+	/* Initialize new directory block */
+	ufs_clear_dir_block(ufs, dir_buf + old_bytes, dir_blksize);
+
+
+	/* Allocate (new, or bigger) fs block if needed */
+	if (new_fragsiz > old_fragsiz)
+	{
+		ufs2_daddr_t old_fsblk = fs_blkno;
+
+		err = ufs_block_alloc(ufs, inode, new_fragsiz, &fs_blkno);
+		if (err) {
+			debugf("ufs_block_alloc failed");
+			goto out;
+		}
+
+		err = ufs_set_block(ufs, inode, dir_blkno, fs_blkno);
+		if (err) {
+			debugf("ufs_set_block failed");
+			goto out;
+		}
+
+		/* Drop old fs block (if there was any) */
+		if (old_fragsiz > 0)
+			ufs_block_free(ufs, vnode, old_fsblk, old_fragsiz, d_ino);
+
+	}
+
+
+	/* Save directory blocks (including added one) */
+	if (blkwrite(ufs, fsbtodb(fs, fs_blkno), dir_buf, new_bytes) == -1) {
+		debugf("Unable to write block %d\n", fs_blkno);
+		err = -EIO;
+		goto out;
+	}
+
+	/* Success! Announce increased directory size */
+	inode->i_size = new_size;
+
+out:
+	free(dir_buf);
+
+	if (vnode)
+		vnode_put(vnode, 1);
+
+	return err;
 }
