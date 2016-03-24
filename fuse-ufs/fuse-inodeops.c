@@ -953,8 +953,7 @@ static int link_proc(struct direct *dirent,
 	return DIRENT_ABORT|DIRENT_CHANGED;
 }
 
-int
-ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
+static int ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 		ino_t ino, int flags)
 {
 	int			retval;
@@ -983,23 +982,10 @@ ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 	/* Try to add another block to the directory
 	 * (A single DIRBLKSIZ block will be sufficient)
 	 */
-	if (ufs_expand_dir(ufs, dir) != 0) {
+	if (ufs_dir_append(ufs, dir, ino, flags, name) != 0) {
 		debugf("Failed to expand directory");
 		return -ENOSPC;
 	}
-
-	/* We got no means to access the added block from here,
-	 * so iterate once again over the whole directory
-	 * (This can be done in a better way)
-	 */
-	ls.done = 0;
-	ls.err = 0;
-	retval = ufs_dir_iterate(ufs, dir, link_proc, &ls);
-	if (retval)
-		return retval;
-	if (ls.err)
-		return ls.err;
-
 
 	return 0; /* success */
 }
@@ -1168,24 +1154,25 @@ ufs_free_inode(uufsd_t *ufs, struct ufs_vnode *vnode, ino_t ino, int mode)
 	return (0);
 }
 
-
-/* Clear directory block of given size:
- * Initialize a single unused entry spanning the entire block
- */
-static void ufs_clear_dir_block(uufsd_t *ufs, char *buf, u_int16_t size)
+/* Initialize directory block: create a single entry spanning entire block */
+static void ufs_init_dir_block(uufsd_t *ufs, char *buf, u_int16_t block_size,
+				ino_t ino, int flags, const char *name)
 {
 	struct direct * de = (struct direct *)buf;
+	assert(block_size >= sizeof(struct direct));
 
-	memset(buf, 0, size);
+	memset(buf, 0, block_size);
 
-	de->d_ino    = 0;    /* unused entry */
-	de->d_reclen = size; /* spanning entire block */
-	de->d_type   = DT_UNKNOWN;
-	de->d_namlen = 0;
+	de->d_ino    = ino;
+	de->d_reclen = block_size;
+	de->d_type   = IFTODT(flags);
+	de->d_namlen = MIN(MAXNAMLEN, strlen(name));
+	strncpy(de->d_name, name, MAXNAMLEN+1);
 }
 
-/* Add one DIRBLKSIZ block to directory */
-int ufs_expand_dir(uufsd_t *ufs, ino_t d_ino)
+/* Append DIRBLKSIZ block to directory and fill in a single entry */
+int ufs_dir_append(uufsd_t *ufs, ino_t d_ino,
+		   ino_t f_ino, int f_flags, const char *f_name)
 {
 	struct fs *fs = &ufs->d_fs;
 	u_int16_t dir_blksize = DIRBLKSIZ; /* to become property of 'ufs' arg */
@@ -1246,7 +1233,8 @@ int ufs_expand_dir(uufsd_t *ufs, ino_t d_ino)
 	}
 
 	/* Initialize new directory block */
-	ufs_clear_dir_block(ufs, dir_buf + old_bytes, dir_blksize);
+	ufs_init_dir_block(ufs, dir_buf + old_bytes, dir_blksize,
+			   f_ino, f_flags, f_name);
 
 
 	/* Allocate (new, or bigger) fs block if needed */

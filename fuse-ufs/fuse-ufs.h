@@ -314,7 +314,11 @@ ufs_hashalloc(struct inode *ip, int cg, int pref, int size, allocfunc_t allocato
 int ufs_inode_io_size(struct inode *inode, int offset, int write);
 int ufs_set_rec_len(uufsd_t *ufs, unsigned int len, struct direct *dirent);
 ufs2_daddr_t ufs_inode_alloc(struct inode *ip, int cg, ufs2_daddr_t ipref, int mode);
-int ufs_expand_dir(uufsd_t *ufs, ino_t d_ino);
+
+/* Append DIRBLKSIZ block to directory and fill in a single entry */
+int ufs_dir_append(uufsd_t *ufs, ino_t d_ino,
+		   ino_t f_ino, int f_flags, const char *f_name);
+
 int ufs_valloc( struct ufs_vnode *pvp, int mode, struct ufs_vnode **vnodepp);
 int do_modetoufslag (mode_t mode);
 int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
