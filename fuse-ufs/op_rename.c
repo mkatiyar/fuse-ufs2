@@ -222,32 +222,14 @@ int op_rename(const char *source, const char *dest)
 		goto out_free_vnodes;
 	}
 	*/
-	do {
-		debugf("calling ufs_link(ufs, %d, %s, %d, %d);", d_dest_ino, r_dest, src_ino, do_modetoufslag(src_inode->i_mode));
-		rt = ufs_link(ufs, d_dest_ino, r_dest, src_vnode, src_inode->i_mode);
-		if (rt != 0) {
-	//		vnode_put(src_vnode, 1);
-			debugf("ufs_link(ufs, %d, %s, %d, %d); failed", d_dest_ino, r_dest, src_ino, do_modetoufslag(src_inode->i_mode));
-			rt = -EIO;
-			goto out_free_vnodes;
-		}
 
-		if (rt == ENOSPC) {
-			debugf("calling ufs_expand_dir(ufs, &d)", src_ino);
-			if (ufs_expand_dir(ufs, d_dest_ino)) {
-				debugf("error while expanding directory %s (%d)", p_dest, d_dest_ino);
-				rt = -ENOSPC;
-				goto out_free_vnodes;
-			}
-			rt = do_readvnode(ufs, p_dest, &d_dest_ino, &d_dest_vnode);
-			if (rt != 0) {
-				debugf("do_readvnode(%s, &d_dest_ino, &d_dest_inode); failed", p_dest);
-				goto out_free_vnodes;
-			}
-		}
-	} while (rt == ENOSPC);
-	//vnode_put(dest_vnode, 1);
-	//dest_vnode = NULL;
+	debugf("calling ufs_link(ufs, %d, %s, %d, %d);", d_dest_ino, r_dest, src_ino, do_modetoufslag(src_inode->i_mode));
+	rt = ufs_link(ufs, d_dest_ino, r_dest, src_vnode, src_inode->i_mode);
+	if (rt) {
+		debugf("ufs_link(ufs, %d, %s, %d, %d); failed", d_dest_ino, r_dest, src_ino, do_modetoufslag(src_inode->i_mode));
+		goto out_free_vnodes;
+	}
+
 
 	/* Special case: if moving dir across different parents 
 		 fix counters and '..' */

@@ -93,19 +93,10 @@ int do_create (uufsd_t *ufs, const char *path, mode_t mode, dev_t dev, const cha
 		goto out;
 	}
 
-	do {
-		rt = ufs_link(ufs, ino, r_path, vnode, mode);
-		if (rt == ENOSPC) {
-			debugf("calling ufs_expand_dir(ufs, &d)", ino);
-			if (ufs_expand_dir(ufs, ino)) {
-				debugf("error while expanding directory %s (%d)", p_path, ino);
-				free_split(p_path, r_path);
-				return ENOSPC;
-			}
-		}
-	} while (rt == ENOSPC);
+	rt = ufs_link(ufs, ino, r_path, vnode, mode);
 	if (rt) {
-		ret = -EIO;
+		debugf("ufs_link() failed");
+		ret = rt;
 		goto out;
 	}
 

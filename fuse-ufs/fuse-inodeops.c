@@ -977,10 +977,31 @@ ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 	if (ls.err)
 		return ls.err;
 
-	if (!ls.done)
-		return ENOSPC;
+	if (ls.done)
+		return 0; /* success */
 
-	return 0;
+	/* Try to add another block to the directory
+	 * (A single DIRBLKSIZ block will be sufficient)
+	 */
+	if (ufs_expand_dir(ufs, dir) != 0) {
+		debugf("Failed to expand directory");
+		return -ENOSPC;
+	}
+
+	/* We got no means to access the added block from here,
+	 * so iterate once again over the whole directory
+	 * (This can be done in a better way)
+	 */
+	ls.done = 0;
+	ls.err = 0;
+	retval = ufs_dir_iterate(ufs, dir, link_proc, &ls);
+	if (retval)
+		return retval;
+	if (ls.err)
+		return ls.err;
+
+
+	return 0; /* success */
 }
 
 int

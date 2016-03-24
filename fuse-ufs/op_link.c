@@ -65,22 +65,12 @@ int op_link (const char *source, const char *dest)
 
 	inode = vnode2inode(vnode);
 
-	do {
-		rc = ufs_link(ufs, d_ino, r_path, vnode, inode->i_mode);
-		if (rc == ENOSPC) {
-			debugf("calling ufs_expand_dir(ufs, &d)", d_ino);
-			if (ufs_expand_dir(ufs, d_ino)) {
-				debugf("error while expanding directory %s (%d)", p_path, d_ino);
-				vnode_put(vnode, 0);
-				free_split(p_path, r_path);
-				return -ENOSPC;
-			}
-		}
-	} while (rc == ENOSPC);
+	rc = ufs_link(ufs, d_ino, r_path, vnode, inode->i_mode);
 	if (rc) {
+		debugf("ufs_link() failed");
 		vnode_put(vnode, 0);
 		free_split(p_path, r_path);
-		return -EIO;
+		return rc;
 	}
 
 	inode->i_mtime = inode->i_atime = inode->i_ctime = ufs->now ? ufs->now : time(NULL);

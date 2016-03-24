@@ -214,24 +214,12 @@ int op_mkdir (const char *path, mode_t mode)
 		return rt;
 	}
 
-	do {
-		debugf("calling ufs_mkdir(ufs, %d, 0, %s);", ino, r_path);
-		rt = ufs_mkdir(ufs, ino, 0, r_path);
-		if (rt == ENOSPC) {
-			debugf("calling ufs_expand_dir(ufs, &d)", ino);
-			/*
-			if (ufs_expand_dir(ufs, ino)) {
-				debugf("error while expanding directory %s (%d)", p_path, ino);
-				free_split(p_path, r_path);
-				return -ENOSPC;
-			}
-			*/
-		}
-	} while (rt == ENOSPC);
+	debugf("calling ufs_mkdir(ufs, %d, 0, %s);", ino, r_path);
+	rt = ufs_mkdir(ufs, ino, 0, r_path);
 	if (rt) {
 		debugf("ufs_mkdir(ufs, %d, 0, %s); failed (%d)", ino, r_path, rt);
 		free_split(p_path, r_path);
-		return -EIO;
+		return rt;
 	}
 
 	rt = do_readvnode(ufs, path, &ino, &child_vnode);
