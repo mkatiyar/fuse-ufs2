@@ -120,9 +120,11 @@ int do_create (uufsd_t *ufs, const char *path, mode_t mode, dev_t dev, const cha
 	}
 
 	if (S_ISLNK(mode) && fastsymlink != NULL) {
+		char * dst_buf = (char *)&(UFS_DINODE(inode)->di_db[0]);
+		size_t dst_len = max_symlinklen(&ufs->d_fs);
 		inode->i_size = strlen(fastsymlink);
-		strncpy((char *)&(UFS_DINODE(inode)->di_db[0]),fastsymlink,
-				((NDADDR + NIADDR) * sizeof(UFS_DINODE(inode)->di_db[0])));
+		assert(inode->i_size < dst_len);
+		strncpy(dst_buf, fastsymlink, dst_len);
 	}
 
 	/* update parent dir */

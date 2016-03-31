@@ -28,8 +28,7 @@ calc_num_blocks(struct inode *inode)
 	int nfrags, numblocks = howmany(inode->i_size, fs->fs_bsize);
 
 	/* Guess(!) whether we're on a "short" symlink --> no blocks used */
-	size_t max_symlinklen = (NDADDR + NIADDR) * sizeof(ufs2_daddr_t);
-	if (S_ISLNK(inode->i_mode) && inode->i_size < max_symlinklen)
+	if (S_ISLNK(inode->i_mode) && inode->i_size < max_symlinklen(fs))
 		return 0;
 
 	if (numblocks < NDADDR) {

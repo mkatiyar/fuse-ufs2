@@ -323,4 +323,8 @@ int ufs_valloc( struct ufs_vnode *pvp, int mode, struct ufs_vnode **vnodepp);
 int do_modetoufslag (mode_t mode);
 int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
 		ino_t *ino);
+
+/* Get name length limit for "short" symlinks */
+size_t max_symlinklen(struct fs * fs);
+
 #endif /* FUSEUFS_H_ */
