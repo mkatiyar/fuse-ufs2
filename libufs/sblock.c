@@ -43,6 +43,18 @@
 
 #include <libufs.h>
 
+
+#define FS_UFS2_CIGAM 0x19015419 /* byte-reversed UFS2 magic number */
+
+#if (BYTE_ORDER == LITTLE_ENDIAN)
+static const char other_byte_order[] = "big";
+#elif (BYTE_ORDER == BIG_ENDIAN)
+static const char other_byte_order[] = "little";
+#else
+#error Cannot figure out host byte order
+#endif
+
+
 static int superblocks[] = SBLOCKSEARCH;
 
 int
@@ -60,6 +72,14 @@ sbread(struct uufsd *disk)
 		if (bread(disk, superblock, disk->d_sb, SBLOCKSIZE) == -1) {
 			ERROR(disk, "non-existent or truncated superblock");
 			return (-1);
+		}
+		if (fs->fs_magic == FS_UFS2_CIGAM) {
+			fprintf(stderr,
+				"Byte-reversed UFS2 superblock detected\n"
+				"Sorry, fuse-ufs currently does not support\n"
+				"%s-endian file systems on this platform\n",
+				other_byte_order);
+			exit (1);
 		}
 		if (fs->fs_magic == FS_UFS1_MAGIC)
 			disk->d_ufs = 1;
