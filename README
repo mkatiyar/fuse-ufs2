@@ -35,7 +35,7 @@ Bugs
 ----
 I wrote this software mainly for fun and to get something working on UFS2. Currently
 only the basic ops work. I've not tested corner cases like out of space and very big files.
-Moreover the ops only work on regular files and directories and not on special or symlink files.
+Moreover the ops only work on regular files and directories and not on special files.
 Those are in my TODO list. I'm not aware of known bugs for read-only mode,
 read only mode should be ok for every one.
 
