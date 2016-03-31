@@ -148,7 +148,7 @@ int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
 
 static int
 ufs_dir_namei(uufsd_t *ufs, ino_t root, ino_t dir, const char *pathname, int pathlen,
-		int link_count, const char **name, int *namelen,
+		const char **name, int *namelen,
 		ino_t *res_ino)
 {
 	char c;
@@ -183,13 +183,13 @@ ufs_dir_namei(uufsd_t *ufs, ino_t root, ino_t dir, const char *pathname, int pat
 
 static int
 ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathlen,
-		int follow, int link_count, ino_t *res_inode)
+		ino_t *res_inode)
 {
 	int retval, namelen;
 	const char *base_name;
 	ino_t dir, inode;
 
-	retval = ufs_dir_namei(ufs, root, base, path, pathlen, link_count, &base_name, &namelen, &dir);
+	retval = ufs_dir_namei(ufs, root, base, path, pathlen, &base_name, &namelen, &dir);
 	if (retval) return retval;
 
 	if (!namelen) {
@@ -198,10 +198,6 @@ ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathl
 	}
 
 	retval = ufs_lookup(ufs, dir, base_name, namelen, &inode);
-
-	if (follow) {
-		assert(0 && "ufs_open_namei() should not follow links");
-	}
 
 	if (retval) {
 		*res_inode = 0;
@@ -217,7 +213,7 @@ ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathl
 int ufs_namei(uufsd_t *ufs, ino_t root_ino, ino_t cur_ino, const char *filename, ino_t *ino)
 {
 	int ret = ufs_open_namei(ufs, root_ino, cur_ino, filename,
-				 strlen(filename), 0, 0, ino);
+				 strlen(filename), ino);
 
 	return ret;
 }
