@@ -39,6 +39,9 @@ Moreover the ops only work on regular files and directories and not on special f
 Those are in my TODO list. I'm not aware of known bugs for read-only mode,
 read only mode should be ok for every one.
 
+Currently no big-endian/little-endian byte order conversions are provided,
+so only file systems in host byte order can be mounted.
+
 ==== USE IT AT YOUR OWN RISK ====
 
 please send output the output of below command while reporting bugs.
