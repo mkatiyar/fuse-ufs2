@@ -301,8 +301,7 @@ libufs_a_SOURCES = \
 	sblock.c \
 	type.c
 
-libufs_a_CFLAGS = -Wall -DHAVE_CONFIG_H -include config.h -D_LIBUFS \
-	$(am__append_1)
+libufs_a_CFLAGS = -Wall -include config.h -D_LIBUFS $(am__append_1)
 all: all-am
 
 .SUFFIXES:

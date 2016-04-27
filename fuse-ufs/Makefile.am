@@ -15,7 +15,6 @@ fuse_ufs_probe_SOURCES = \
 
 fuse_ufs_probe_CFLAGS = \
 	-Wall \
-	-DHAVE_CONFIG_H \
 	-I$(top_srcdir) \
 	-I/usr/local/include
 
@@ -108,7 +107,6 @@ umfuseufs_la_SOURCES = \
 
 umfuseufs_la_CFLAGS = \
 	-Wall \
-	-DHAVE_CONFIG_H \
 	-D_GNU_SOURCE \
 	$(DEVELFLAGS) \
 	-I$(top_srcdir) \
@@ -122,7 +120,6 @@ umfuseufs_la_LDFLAGS = \
 
 fuse_ufs_CFLAGS = \
 	-Wall \
-	-DHAVE_CONFIG_H \
 	-I$(top_srcdir) \
 	-I/usr/local/include
 
