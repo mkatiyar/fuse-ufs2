@@ -11,6 +11,7 @@ libufs_a_SOURCES = \
 libufs_a_CFLAGS = \
 	-Wall \
 	-DHAVE_CONFIG_H \
+	-include config.h \
 	-D_LIBUFS
 
 if LIBUFS_DEBUG
