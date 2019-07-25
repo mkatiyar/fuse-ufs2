@@ -21,11 +21,6 @@
 #include <sys/param.h>
 #define UFS_FILE_NOT_FOUND ENOENT
 #define DIRENT_ABORT 2
-#define KEEPON 0
-
-static int
-ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathlen,
-		int follow, int link_count, char *buf, ino_t *res_inode);
 
 struct lookup_struct  {
 	const char *name;
@@ -38,6 +33,9 @@ static int lookup_proc(struct direct *dirent, int inum, char *buf, void *priv_da
 {
 	struct lookup_struct *ls = (struct lookup_struct *) priv_data;
 
+	if (dirent->d_ino==0) /* skip unused dentry */
+		return 0;
+
 	if (ls->len != (dirent->d_namlen & 0xFF))
 		return 0;
 	if (strncmp(ls->name, dirent->d_name, (dirent->d_namlen & 0xFF)))
@@ -47,8 +45,8 @@ static int lookup_proc(struct direct *dirent, int inum, char *buf, void *priv_da
 	return DIRENT_ABORT;
 }
 
-int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
-		    char *block_buf, int (*func)(
+int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino,
+		    int (*func)(
 					  struct direct *dirent,
 					  int n,
 					  char *buf,
@@ -59,8 +57,8 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 	ufs2_daddr_t ndb;
 	ufs2_daddr_t blkno;
 	int blksize = ufs->d_fs.fs_bsize;
+	u_int64_t dir_size;
 	char *dirbuf = NULL;
-	caddr_t end_addr;
 	struct ufs_vnode *vnode;
 
 	vnode = vnode_get(ufs, dirino);
@@ -68,6 +66,7 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 		ret = -ENOMEM;
 		goto out;
 	}
+	dir_size = vnode2inode(vnode)->i_size;
 
 	dirbuf = malloc(blksize);
 	if (!dirbuf) {
@@ -75,13 +74,10 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 		goto out;
 	}
 
-	struct direct *de = (struct direct *)dirbuf;
-	end_addr = dirbuf + blksize;
-
-	ndb = howmany((vnode2inode(vnode)->i_size), ufs->d_fs.fs_bsize);
+	ndb = howmany(dir_size, ufs->d_fs.fs_bsize);
 	int offset, pos = 0;
 	for (i = 0; i < ndb ; i++) {
-		ret = ufs_bmap(ufs, dirino, vnode, i, &blkno);
+		ret = ufs_bmap(ufs, vnode, i, &blkno);
 		if (ret) {
 			ret = -EIO;
 			goto out;
@@ -93,12 +89,16 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 			goto out;
 		}
 		offset = 0;
-		while ((char *)de < end_addr &&
-			(de->d_ino || (flags & DIRENT_FLAG_INCLUDE_EMPTY))) {
-	//		debugf("Dir %d : %s %d %d %d\n", (int)dirino,
-	//				de->d_name, de->d_ino,
-	//				de->d_type, de->d_reclen);
-			ret = (*func)(de, offset, dirbuf, priv_data);
+		while (offset < blksize && pos + offset < dir_size) {
+			struct direct *de = (struct direct *)(dirbuf + offset);
+
+			/* HACK: Restrict frame for func() operations
+			 *       to blocks of DIRBLKSIZ bytes
+			 */
+			int    blockoff = offset % DIRBLKSIZ;
+			char * dirblock = dirbuf + (offset-blockoff);
+
+			ret = (*func)(de, blockoff, dirblock, priv_data);
 			if (ret & DIRENT_CHANGED) {
 				if (blkwrite(ufs, fsbtodb(&ufs->d_fs, blkno), dirbuf, blksize) == -1) {
 					debugf("Unable to write block %d\n",blkno);
@@ -111,7 +111,6 @@ int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
 				goto out;
 			}
 			offset += de->d_reclen;
-			de = (struct direct *)((char *)de + de->d_reclen);
 		}
 		pos += blksize;
 	}
@@ -127,7 +126,7 @@ out:
 }
 
 int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
-		char *buf, ino_t *ino)
+		ino_t *ino)
 {
 	int	retval;
 	struct lookup_struct ls;
@@ -140,7 +139,7 @@ int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
 	ls.inode = ino;
 	ls.found = 0;
 
-	retval = ufs_dir_iterate(ufs, dir, 0, buf, lookup_proc, &ls);
+	retval = ufs_dir_iterate(ufs, dir, lookup_proc, &ls);
 	if (retval)
 		return retval;
 
@@ -149,7 +148,7 @@ int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
 
 static int
 ufs_dir_namei(uufsd_t *ufs, ino_t root, ino_t dir, const char *pathname, int pathlen,
-		int link_count, char *buf, const char **name, int *namelen,
+		const char **name, int *namelen,
 		ino_t *res_ino)
 {
 	char c;
@@ -172,7 +171,7 @@ ufs_dir_namei(uufsd_t *ufs, ino_t root, ino_t dir, const char *pathname, int pat
 		}
 		if (pathlen < 0)
 			break;
-		retval = ufs_lookup (ufs, dir, thisname, len, buf, &inode);
+		retval = ufs_lookup (ufs, dir, thisname, len, &inode);
 		if (retval) return retval;
 		dir = inode;
 	}
@@ -183,63 +182,14 @@ ufs_dir_namei(uufsd_t *ufs, ino_t root, ino_t dir, const char *pathname, int pat
 }
 
 static int
-ufs_follow_link(uufsd_t *ufs, ino_t root, ino_t dir, ino_t inode, int link_count,
-				char *buf, ino_t *res_inode)
-{
-	char *pathname;
-	char *buffer = 0;
-	errcode_t retval;
-	struct ufs_vnode *vnode;
-	struct inode *inodep;
-	int blocksize = ufs->d_fs.fs_bsize;
-
-	vnode = vnode_get(ufs, inode);
-	if (!vnode) {
-		return -ENOMEM;
-	}
-
-	inodep = vnode2inode(vnode);
-
-	if (!LINUX_S_ISLNK(inodep->i_mode)) {
-		*res_inode = inode;
-		retval = 0;
-		goto out;
-	}
-
-	if (link_count++ > 5) {
-		retval = -EMLINK;
-		goto out;
-	}
-	if (inodep->i_blocks) {
-		retval = ufs_get_mem(blocksize, &buffer);
-		if (retval)
-			goto out;
-		retval = blkread(ufs, UFS_DINODE(inodep)->di_db[0], buffer, blocksize);
-		if (retval) {
-			goto out;
-		}
-		pathname = buffer;
-	} else
-		pathname = (char *)&(UFS_DINODE(inodep)->di_db[0]);
-	retval = ufs_open_namei(ufs, root, dir, pathname, inodep->i_size, 1,
-			link_count, buf, res_inode);
-out:
-	vnode_put(vnode, 0);
-
-	if (buffer)
-		ufs_free_mem(&buffer);
-	return retval;
-}
-
-static int
 ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathlen,
-		int follow, int link_count, char *buf, ino_t *res_inode)
+		ino_t *res_inode)
 {
 	int retval, namelen;
 	const char *base_name;
 	ino_t dir, inode;
 
-	retval = ufs_dir_namei(ufs, root, base, path, pathlen, link_count, buf, &base_name, &namelen, &dir);
+	retval = ufs_dir_namei(ufs, root, base, path, pathlen, &base_name, &namelen, &dir);
 	if (retval) return retval;
 
 	if (!namelen) {
@@ -247,14 +197,7 @@ ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathl
 		return 0;
 	}
 
-	retval = ufs_lookup(ufs, dir, base_name, namelen, buf, &inode);
-
-	if (follow) {
-		retval = ufs_follow_link(ufs, root, dir, inode, link_count,
-				buf, &inode);
-		if (retval)
-			return retval;
-	}
+	retval = ufs_lookup(ufs, dir, base_name, namelen, &inode);
 
 	if (retval) {
 		*res_inode = 0;
@@ -269,18 +212,8 @@ ufs_open_namei(uufsd_t *ufs, ino_t root, ino_t base, const char *path, int pathl
  */
 int ufs_namei(uufsd_t *ufs, ino_t root_ino, ino_t cur_ino, const char *filename, ino_t *ino)
 {
-	char *buf = (char *)malloc(ufs->d_fs.fs_bsize);
-	if (!buf) {
-		debugf("%s: Unable to allocate memory \n", __func__);
-		return -1;
-	} else {
-		bzero(buf, ufs->d_fs.fs_bsize);
-	}
-
 	int ret = ufs_open_namei(ufs, root_ino, cur_ino, filename,
-				 strlen(filename), 0, 0, buf, ino);
-
-	free(buf);
+				 strlen(filename), ino);
 
 	return ret;
 }

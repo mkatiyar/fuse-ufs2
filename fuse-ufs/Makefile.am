@@ -15,7 +15,7 @@ fuse_ufs_probe_SOURCES = \
 
 fuse_ufs_probe_CFLAGS = \
 	-Wall \
-	-DHAVE_CONFIG_H \
+	-I$(top_srcdir) \
 	-I/usr/local/include
 
 fuse_ufs_probe_LDADD = \
@@ -107,9 +107,9 @@ umfuseufs_la_SOURCES = \
 
 umfuseufs_la_CFLAGS = \
 	-Wall \
-	-DHAVE_CONFIG_H \
 	-D_GNU_SOURCE \
 	$(DEVELFLAGS) \
+	-I$(top_srcdir) \
 	-I$(includedir)/umview \
 	-I/usr/local/include
 
@@ -120,18 +120,17 @@ umfuseufs_la_LDFLAGS = \
 
 fuse_ufs_CFLAGS = \
 	-Wall \
-	-DHAVE_CONFIG_H \
+	-I$(top_srcdir) \
 	-I/usr/local/include
 
 fuse_ufs_LDADD = \
 	-L/usr/local/lib \
 	../libufs/libufs.a \
-	-lcom_err \
 	-lfuse
 
 install-data-hook:
 	cd "$(DESTDIR)/$(moddir)" && rm -f $(mod_LTLIBRARIES)
 
 install-exec-local:
-	$(INSTALL) -d "$(DESTDIR)/usr/sbin"
-	$(LN_S) -f "$(DESTDIR)/$(bindir)/fuse-ufs" "$(DESTDIR)/sbin/mount.fuse-ufs"
+	$(INSTALL) -d "$(DESTDIR)/$(sbindir)"
+	$(LN_S) -f "$(DESTDIR)/$(bindir)/fuse-ufs" "$(DESTDIR)/$(sbindir)/mount.fuse-ufs"

@@ -22,7 +22,6 @@
 int op_utimens (const char *path, const struct timespec tv[2])
 {
 	int rt;
-	errcode_t rc;
 	ino_t ino;
 	struct ufs_vnode *vnode;
 	struct inode *inode;
@@ -41,8 +40,8 @@ int op_utimens (const char *path, const struct timespec tv[2])
 	inode->i_atime = tv[0].tv_sec;
 	inode->i_mtime = tv[0].tv_sec;
 
-	rc=vnode_put(vnode, 1);
-	if (rc) {
+	rt = vnode_put(vnode, 1);
+	if (rt) {
 		debugf("vnode_put(vnode,1); failed");
 		return -EIO;
 	}

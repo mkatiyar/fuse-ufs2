@@ -23,7 +23,7 @@ static int ufs_new_dir_block(uufsd_t *ufs, ino_t dir_ino,
 		struct ufs_vnode *parent, char **block)
 {
 	struct direct 	*dir = NULL;
-	errcode_t		retval;
+	int		retval;
 	char			*buf;
 	int			rec_len;
 	struct fs *fs = &ufs->d_fs;
@@ -71,7 +71,7 @@ static int ufs_new_dir_block(uufsd_t *ufs, ino_t dir_ino,
 
 static int ufs_mkdir(uufsd_t *ufs, ino_t parent, ino_t inum, char *name)
 {
-	errcode_t		retval;
+	int		retval;
 	struct ufs_vnode	*parent_vnode = NULL, *vnode = NULL;
 	struct inode *parent_inode, *inode;
 	ino_t		ino = inum;
@@ -143,7 +143,7 @@ static int ufs_mkdir(uufsd_t *ufs, ino_t parent, ino_t inum, char *name)
 	 * Link the directory into the filesystem hierarchy
 	 */
 	if (name) {
-		retval = ufs_lookup(ufs, parent, name, strlen(name), 0,
+		retval = ufs_lookup(ufs, parent, name, strlen(name),
 				       &scratch_ino);
 		if (!retval) {
 			retval = EEXIST;
@@ -181,7 +181,6 @@ int op_mkdir (const char *path, mode_t mode)
 {
 	int rt;
 	time_t tm;
-	errcode_t rc;
 
 	char *p_path;
 	char *r_path;
@@ -198,7 +197,7 @@ int op_mkdir (const char *path, mode_t mode)
 	RETURN_IF_RDONLY(ufs);
 
 	debugf("enter");
-	debugf("path = %s, mode: 0%o, dir:0%o", path, mode, LINUX_S_IFDIR);
+	debugf("path = %s, mode: 0%o, dir:0%o", path, mode, S_IFDIR);
 
 	rt=do_check_split(path, &p_path ,&r_path);
 	if (rt != 0) {
@@ -215,24 +214,12 @@ int op_mkdir (const char *path, mode_t mode)
 		return rt;
 	}
 
-	do {
-		debugf("calling ufs_mkdir(ufs, %d, 0, %s);", ino, r_path);
-		rc = ufs_mkdir(ufs, ino, 0, r_path);
-		if (rc == ENOSPC) {
-			debugf("calling ufs_expand_dir(ufs, &d)", ino);
-			/*
-			if (ufs_expand_dir(ufs, ino)) {
-				debugf("error while expanding directory %s (%d)", p_path, ino);
-				free_split(p_path, r_path);
-				return -ENOSPC;
-			}
-			*/
-		}
-	} while (rc == ENOSPC);
-	if (rc) {
-		debugf("ufs_mkdir(ufs, %d, 0, %s); failed (%d)", ino, r_path, rc);
+	debugf("calling ufs_mkdir(ufs, %d, 0, %s);", ino, r_path);
+	rt = ufs_mkdir(ufs, ino, 0, r_path);
+	if (rt) {
+		debugf("ufs_mkdir(ufs, %d, 0, %s); failed (%d)", ino, r_path, rt);
 		free_split(p_path, r_path);
-		return -EIO;
+		return rt;
 	}
 
 	rt = do_readvnode(ufs, path, &ino, &child_vnode);
@@ -242,7 +229,7 @@ int op_mkdir (const char *path, mode_t mode)
 	}
 	tm = ufs->now ? ufs->now : time(NULL);
 	inode = vnode2inode(child_vnode);
-	inode->i_mode = LINUX_S_IFDIR | mode;
+	inode->i_mode = S_IFDIR | mode;
 	inode->i_ctime = inode->i_atime = inode->i_mtime = tm;
 	ctx = fuse_get_context();
 	if (ctx) {

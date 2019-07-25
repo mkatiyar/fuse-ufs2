@@ -21,7 +21,6 @@
 
 ufs_file_t do_open (uufsd_t *ufs, const char *path, int flags)
 {
-	errcode_t rc;
 	ino_t ino;
 	ufs_file_t efile;
 	struct ufs_vnode *vnode;
@@ -36,11 +35,11 @@ ufs_file_t do_open (uufsd_t *ufs, const char *path, int flags)
 		return NULL;
 	}
 
-	rc = ufs_file_open2(ufs, ino, vnode,
+	rt = ufs_file_open2(ufs, ino, vnode,
 			    (((flags & O_ACCMODE) != 0) ? UFS_FILE_WRITE : 0),
 			    &efile);
 
-	if (rc) {
+	if (rt) {
 		vnode_put(vnode,0);
 		return NULL;
 	}

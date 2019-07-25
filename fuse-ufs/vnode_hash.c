@@ -24,7 +24,7 @@
 #define VNODE_HASH_SIZE 256
 #define VNODE_HASH_MASK (VNODE_HASH_SIZE-1)
 
-#if !defined(VNODE_DEUG)
+#if !defined(VNODE_DEBUG)
 #undef debugf
 #define debugf(a...) do { } while (0)
 #endif

@@ -42,7 +42,9 @@ void do_fillstatbuf (uufsd_t *ufs, ino_t ino, struct inode *inode, struct stat *
 	 * should be unique and != existing devices */
 	st->st_dev = (dev_t) ((long) ufs);
 	st->st_ino = inode->i_number;
+#if !defined __x86_64__ && defined __USE_FILE_OFFSET64
 	st->__st_ino = inode->i_number;
+#endif
 	st->st_mode = inode->i_mode;
 	st->st_nlink = inode->i_nlink;
 	st->st_uid = inode->i_uid;	/* add in uid_high */

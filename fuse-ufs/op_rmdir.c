@@ -29,10 +29,13 @@ static int rmdir_proc (struct direct *dirent, int offset,
 {
 	int *p_empty= (int *) private;
 
+	if (dirent->d_ino==0) /* skip unused dentry */
+		return 0;
+
 	debugf("enter");
 	debugf("walking on: %s", dirent->d_name);
 
-	if (dirent->d_ino == 0 ||
+	if (
 			(((dirent->d_namlen & 0xFF) == 1) && (dirent->d_name[0] == '.')) ||
 			(((dirent->d_namlen & 0xFF) == 2) && (dirent->d_name[0] == '.') && 
 			 (dirent->d_name[1] == '.'))) {
@@ -46,10 +49,10 @@ static int rmdir_proc (struct direct *dirent, int offset,
 
 int do_check_empty_dir(uufsd_t *ufs, ino_t ino)
 {
-	errcode_t rc;
+	int rc;
 	int empty = 1;
 
-	rc = ufs_dir_iterate(ufs, ino, 0, 0, rmdir_proc, &empty);
+	rc = ufs_dir_iterate(ufs, ino, rmdir_proc, &empty);
 	if (rc) {
 		debugf("while iterating over directory");
 		return -EIO;
@@ -66,7 +69,6 @@ int do_check_empty_dir(uufsd_t *ufs, ino_t ino)
 int op_rmdir (const char *path)
 {
 	int rt;
-	errcode_t rc;
 
 	char *p_path;
 	char *r_path;
@@ -108,7 +110,7 @@ int op_rmdir (const char *path)
 	r_inode = vnode2inode(r_vnode);
 	p_inode = vnode2inode(p_vnode);
 
-	if (!LINUX_S_ISDIR(r_inode->i_mode)) {
+	if (!S_ISDIR(r_inode->i_mode)) {
 		debugf("%s is not a directory", path);
 		rt = -ENOTDIR;
 		goto out;
@@ -125,8 +127,8 @@ int op_rmdir (const char *path)
 		goto out;
 	}
 
-	rc = ufs_unlink(ufs, p_ino, r_path, r_ino, 0);
-	if (rc) {
+	rt = ufs_unlink(ufs, p_ino, r_path, r_ino, 0);
+	if (rt) {
 		debugf("while unlinking ino %d", (int) r_ino);
 		rt = -EIO;
 		goto out;

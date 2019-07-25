@@ -22,12 +22,12 @@
 
 void * op_init (struct fuse_conn_info *conn)
 {
-	errcode_t rc;
+	int rc;
 	struct fuse_context *cntx=fuse_get_context();
 	struct ufs_data *ufsdata=cntx->private_data;
 	struct fs *fs;
 	char *buf;
-	int i, error;
+	int i;
 
 	debugf("enter %s", ufsdata->device);
 
@@ -57,7 +57,7 @@ void * op_init (struct fuse_conn_info *conn)
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
-		if ((error = bread(&ufsdata->ufs, fsbtodb(fs, fs->fs_csaddr + i), (void *)buf, size)) == -1) {
+		if (bread(&ufsdata->ufs, fsbtodb(fs, fs->fs_csaddr + i), (void *)buf, size) == -1) {
 			free(fs->fs_csp);
 			exit(1);
 		}
@@ -74,6 +74,9 @@ void * op_init (struct fuse_conn_info *conn)
 	fs->fs_contigdirs = (u_int8_t *)space;
 	bzero(fs->fs_contigdirs, size);
 	fs->fs_active = NULL;
+
+	/* honour readonly mount option: copy into temporary superblock field */
+	fs->fs_ronly = ufsdata->readonly;
 
 	debugf("FileSystem %s", (ufsdata->ufs.d_fs.fs_ronly == 0) ? "Read&Write" : "ReadOnly");
 	debugf("leave");

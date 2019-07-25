@@ -21,12 +21,13 @@
 
 static void release_callback (struct ufs_vnode *vnode, int flags)
 {
+	/* TODO: Track whether the inode is actually dirty */
 	vnode_put(vnode, (flags & UFS_FILE_WRITE) != 0);
 }
 
 int do_release (ufs_file_t file)
 {
-	errcode_t rc;
+	int rc;
 
 	debugf("enter");
 	debugf("path = (%p)", file);

@@ -57,7 +57,7 @@
 #define UFS_SEEK_END	2
 
 struct ufs_file {
-	errcode_t	magic;
+	long		magic;
 	struct uufsd 	*fs;
 	ino_t		ino;
 	struct ufs_vnode *inode;

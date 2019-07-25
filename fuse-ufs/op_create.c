@@ -60,7 +60,6 @@ int do_create (uufsd_t *ufs, const char *path, mode_t mode, dev_t dev, const cha
 {
 	int rt;
 	time_t tm;
-	errcode_t rc;
 
 	char *p_path;
 	char *r_path;
@@ -87,26 +86,17 @@ int do_create (uufsd_t *ufs, const char *path, mode_t mode, dev_t dev, const cha
 		return rt;
 	}
 
-	rc = ufs_valloc(dirnode, mode, &vnode);
-	if (rc) {
-		debugf("ufs_new_inode(ep.fs, ino, mode, 0, &n_ino); failed");
+	rt = ufs_valloc(dirnode, mode, &vnode);
+	if (rt) {
+		debugf("ufs_valloc(dirnode, mode, &vnode); failed");
 		ret = -ENOMEM;
 		goto out;
 	}
 
-	do {
-		rc = ufs_link(ufs, ino, r_path, vnode, mode);
-		if (rc == ENOSPC) {
-			debugf("calling ufs_expand_dir(ufs, &d)", ino);
-			if (ufs_expand_dir(ufs, ino)) {
-				debugf("error while expanding directory %s (%d)", p_path, ino);
-				free_split(p_path, r_path);
-				return ENOSPC;
-			}
-		}
-	} while (rc == ENOSPC);
-	if (rc) {
-		ret = -EIO;
+	rt = ufs_link(ufs, ino, r_path, vnode, mode);
+	if (rt) {
+		debugf("ufs_link() failed");
+		ret = rt;
 		goto out;
 	}
 
@@ -130,9 +120,11 @@ int do_create (uufsd_t *ufs, const char *path, mode_t mode, dev_t dev, const cha
 	}
 
 	if (S_ISLNK(mode) && fastsymlink != NULL) {
+		char * dst_buf = (char *)&(UFS_DINODE(inode)->di_db[0]);
+		size_t dst_len = max_symlinklen(&ufs->d_fs);
 		inode->i_size = strlen(fastsymlink);
-		strncpy((char *)&(UFS_DINODE(inode)->di_db[0]),fastsymlink,
-				((NDADDR + NIADDR) * sizeof(UFS_DINODE(inode)->di_db[0])));
+		assert(inode->i_size < dst_len);
+		strncpy(dst_buf, fastsymlink, dst_len);
 	}
 
 	/* update parent dir */

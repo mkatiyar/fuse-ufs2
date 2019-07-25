@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program (in the main directory of the fuse-ext2
+ * along with this program (in the main directory of the fuse-ufs
  * distribution in the file COPYING); if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
@@ -59,10 +59,6 @@
 #error "***********************************************************"
 #endif
 
-/* extra definitions not yet included in ext2fs.h */
-#define EXT2_FILE_SHARED_INODE 0x8000
-errcode_t ext2fs_file_close2(ext2_file_t file, void (*close_callback) (struct ext2_inode *inode, int flags));
-
 #define DEV_BSIZE (1 << DEV_BSHIFT)
 #define	UFS_DIR_REC_LEN(namlen)						\
 	(((uintptr_t)&((struct direct *)0)->d_name +			\
@@ -80,8 +76,6 @@ errcode_t ext2fs_file_close2(ext2_file_t file, void (*close_callback) (struct ex
 	} while(0)
 
 #define UFS_FILE(efile) ((void *) (unsigned long) (efile))
-/* max timeout to flush bitmaps, to reduce inconsistencies */
-#define FLUSH_BITMAPS_TIMEOUT 10
 
 #define MIN(X, Y) X < Y ? X : Y
 
@@ -92,13 +86,11 @@ struct ufs_data {
 	unsigned char silent;
 	unsigned char force;
 	unsigned char readonly;
-	time_t last_flush;
 	char *mnt_point;
 	char *options;
 	char *device;
 	char *volname;
 	uufsd_t ufs;
-	ext2_filsys e2fs;
 };
 
 struct ufs_vnode {
@@ -119,18 +111,6 @@ static inline uufsd_t *current_ufs(void)
 	struct fuse_context *mycontext=fuse_get_context();
 	struct ufs_data *ufsdata=mycontext->private_data;
 	return (uufsd_t *)&(ufsdata->ufs);
-}
-
-static inline ext2_filsys current_ext2fs(void)
-{
-	struct fuse_context *mycontext=fuse_get_context();
-	struct ufs_data *e2data=mycontext->private_data;
-	time_t now=time(NULL);
-	if ((now - e2data->last_flush) > FLUSH_BITMAPS_TIMEOUT) {
-		ext2fs_write_bitmaps(e2data->e2fs);
-		e2data->last_flush=now;
-	}
-	return (ext2_filsys) e2data->e2fs;
 }
 
 #if ENABLE_DEBUG
@@ -183,7 +163,6 @@ static inline void debug_main_printf (const char *function, char *file, int line
 
 #endif /* ENABLE_DEBUG */
 
-struct ext2_vnode;
 
 struct ufs_vnode *vnode_get(uufsd_t *ufs, ino_t ino);
 
@@ -248,8 +227,6 @@ int op_statfs(const char *path, struct statvfs *buf);
 
 /* write support */
 
-int do_modetoext2lag (mode_t mode);
-
 int op_chmod (const char *path, mode_t mode);
 
 int op_chown (const char *path, uid_t uid, gid_t gid);
@@ -289,10 +266,10 @@ int op_link (const char *source, const char *dest);
 int op_rename (const char *source, const char *dest);
 
 int ufs_namei(uufsd_t *ufs, ino_t root_ino, ino_t cur_ino, const char *filename, ino_t *ino);
-errcode_t ufs_bmap(uufsd_t *ufs, ino_t dirino, struct ufs_vnode *inode, blk_t fbn, ufs2_daddr_t *blkno);
+int ufs_bmap(uufsd_t *ufs, struct ufs_vnode *inode, blk_t fbn, ufs2_daddr_t *blkno);
 
-int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino, int flags,
-                    char *block_buf, int (*func)(
+int ufs_dir_iterate(uufsd_t *ufs, ino_t dirino,
+                    int (*func)(
                                           struct direct *dirent,
 					  int inum,
 					  char *buf,
@@ -306,40 +283,48 @@ void copy_incore_to_ondisk(struct inode *inode, struct ufs2_dinode *dinop);
 void copy_ondisk_to_incore(uufsd_t *ufsp, struct inode *inode,
 			struct ufs2_dinode *dinop, ino_t ino);
 
-errcode_t ufs_write_new_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode);
-errcode_t ufs_write_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode);
-errcode_t ufs_new_inode(uufsd_t *ufs, ino_t parent_ino, mode_t mode,
-			void *ino_bitmap, ino_t *newinum);
-errcode_t ufs_unlink(uufsd_t *ufs, ino_t d_dest_ino, char *r_dest, ino_t src_ino, int flags);
-errcode_t ufs_link(uufsd_t *ufs, ino_t dir_ino, char *r_dest, struct ufs_vnode *vnode, int mode);
+int ufs_write_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode);
 
-errcode_t ufs_file_write(ufs_file_t file, const void *buf,
+int ufs_unlink(uufsd_t *ufs, ino_t d_dest_ino, char *r_dest, ino_t src_ino, int flags);
+int ufs_link(uufsd_t *ufs, ino_t dir_ino, char *r_dest, struct ufs_vnode *vnode, int mode);
+
+int ufs_file_write(ufs_file_t file, const void *buf,
 			 unsigned int nbytes, unsigned int *written);
 
-errcode_t ufs_file_flush(ufs_file_t file);
-errcode_t ufs_file_lseek(ufs_file_t file, __u64 offset, int whence, __u64 *ret_pos);
-errcode_t ufs_file_get_size(ufs_file_t file, __u64 *ret_size);
-errcode_t ufs_file_read(ufs_file_t file, void *buf, unsigned int wanted,
+int ufs_file_flush(ufs_file_t file);
+int ufs_file_lseek(ufs_file_t file, __u64 offset, int whence, __u64 *ret_pos);
+int ufs_file_get_size(ufs_file_t file, __u64 *ret_size);
+int ufs_file_read(ufs_file_t file, void *buf, unsigned int wanted,
 			unsigned int *got);
-errcode_t ufs_block_alloc(uufsd_t *ufs, struct inode* inode, int size, ufs2_daddr_t *blkno);
-errcode_t ufs_set_block(uufsd_t *fs, struct inode *inode, blk_t fbn, ufs2_daddr_t blockno);
-errcode_t ufs_truncate(uufsd_t *ufs, struct ufs_vnode *vnode, int newsize);
+int ufs_block_alloc(uufsd_t *ufs, struct inode* inode, int size, ufs2_daddr_t *blkno);
+int ufs_set_block(uufsd_t *fs, struct inode *inode, blk_t fbn, ufs2_daddr_t blockno);
+int ufs_truncate(uufsd_t *ufs, struct ufs_vnode *vnode, int newsize);
 void ufs_block_free( uufsd_t *ufs, struct ufs_vnode *vnode, ufs2_daddr_t bno,
 			long size, ino_t inum);
-errcode_t ufs_file_open2(uufsd_t *fs, ino_t ino, struct ufs_vnode *vnode,
+int ufs_file_open2(uufsd_t *fs, ino_t ino, struct ufs_vnode *vnode,
 			    int flags, ufs_file_t *ret);
-errcode_t ufs_file_set_size(ufs_file_t file, __u64 size);
+int ufs_file_close2(ufs_file_t file,
+		    void (*close_callback) (struct ufs_vnode *inode, int flags));
+int ufs_file_set_size(ufs_file_t file, __u64 size);
 int ufs_free_inode(uufsd_t *ufs, struct ufs_vnode *vnode, ino_t ino, int mode);
 ufs2_daddr_t ufs_inode_alloc(struct inode *ip, int cg, ufs2_daddr_t ipref, int mode);
 typedef ufs2_daddr_t allocfunc_t(struct inode *ip, int cg, ufs2_daddr_t bpref, int size);
 ufs2_daddr_t
 ufs_hashalloc(struct inode *ip, int cg, int pref, int size, allocfunc_t allocator);
 int ufs_inode_io_size(struct inode *inode, int offset, int write);
-errcode_t ufs_set_rec_len(uufsd_t *ufs, unsigned int len, struct direct *dirent);
+int ufs_set_rec_len(uufsd_t *ufs, unsigned int len, struct direct *dirent);
 ufs2_daddr_t ufs_inode_alloc(struct inode *ip, int cg, ufs2_daddr_t ipref, int mode);
-int ufs_expand_dir(uufsd_t *ufs, ino_t d_ino);
+
+/* Append DIRBLKSIZ block to directory and fill in a single entry */
+int ufs_dir_append(uufsd_t *ufs, ino_t d_ino,
+		   ino_t f_ino, int f_flags, const char *f_name);
+
 int ufs_valloc( struct ufs_vnode *pvp, int mode, struct ufs_vnode **vnodepp);
 int do_modetoufslag (mode_t mode);
 int ufs_lookup(uufsd_t *ufs, ino_t dir, const char *name, int namelen,
-		char *buf, ino_t *ino);
+		ino_t *ino);
+
+/* Get name length limit for "short" symlinks */
+size_t max_symlinklen(struct fs * fs);
+
 #endif /* FUSEUFS_H_ */

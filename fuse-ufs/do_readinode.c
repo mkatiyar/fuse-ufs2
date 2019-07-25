@@ -27,6 +27,10 @@ calc_num_blocks(struct inode *inode)
 	struct fs *fs = inode->i_fs;
 	int nfrags, numblocks = howmany(inode->i_size, fs->fs_bsize);
 
+	/* Guess(!) whether we're on a "short" symlink --> no blocks used */
+	if (S_ISLNK(inode->i_mode) && inode->i_size < max_symlinklen(fs))
+		return 0;
+
 	if (numblocks < NDADDR) {
 		nfrags = numfrags(fs, fragroundup(fs, inode->i_size));
 	} else {
@@ -99,7 +103,7 @@ copy_ondisk_to_incore(uufsd_t *ufsp, struct inode *inode,
 
 int do_readinode(uufsd_t *ufs, const char *path, ino_t *ino, struct inode *inode)
 {
-	errcode_t rc;
+	int rc;
 	int mode;
 	struct ufs2_dinode *dinop = NULL;
 

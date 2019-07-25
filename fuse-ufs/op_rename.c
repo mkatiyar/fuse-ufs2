@@ -22,7 +22,6 @@
 static int fix_dotdot_proc (
 		struct direct *dirent,
 		int offset,
-		int blocksize,
 		char *buf, void *private)
 {
 	ino_t *p_dotdot = (ino_t *) private;
@@ -43,11 +42,10 @@ static int fix_dotdot_proc (
 
 static int do_fix_dotdot(uufsd_t *ufs, ino_t ino, ino_t dotdot)
 {
-	errcode_t rc;
+	int rc;
 
 	debugf("enter");
-	rc = ufs_dir_iterate(ufs, ino, DIRENT_FLAG_INCLUDE_EMPTY, 
-			0, fix_dotdot_proc, &dotdot);
+	rc = ufs_dir_iterate(ufs, ino, fix_dotdot_proc, &dotdot);
 	if (rc) {
 		debugf("while iterating over directory");
 		return -EIO;
@@ -59,7 +57,6 @@ static int do_fix_dotdot(uufsd_t *ufs, ino_t ino, ino_t dotdot)
 int op_rename(const char *source, const char *dest)
 {
 	int rt = 0;
-	errcode_t rc;
 	int destrt;
 
 	char *p_src;
@@ -136,10 +133,10 @@ int op_rename(const char *source, const char *dest)
 	/* EINVAL The  new  pathname  contained a path prefix of the old:
 		 this should be checked by fuse */
 	if (destrt == 0) {
-		if (LINUX_S_ISDIR(dest_inode->i_mode)) {
+		if (S_ISDIR(dest_inode->i_mode)) {
 			/* EISDIR newpath  is  an  existing directory, but oldpath is not a direc‐
 			   tory. */
-			if (!(LINUX_S_ISDIR(src_inode->i_mode))) {
+			if (!(S_ISDIR(src_inode->i_mode))) {
 				debugf("newpath is dir && oldpath is not a dir -> EISDIR");
 				rt = -EISDIR;
 				goto out_free_vnodes;
@@ -153,8 +150,8 @@ int op_rename(const char *source, const char *dest)
 		}
 		/* ENOTDIR: oldpath  is a directory, and newpath exists but is not a 
 			 directory */
-		if (LINUX_S_ISDIR(src_inode->i_mode) &&
-				!(LINUX_S_ISDIR(dest_inode->i_mode))) {
+		if (S_ISDIR(src_inode->i_mode) &&
+				!(S_ISDIR(dest_inode->i_mode))) {
 			debugf("oldpath is dir && newpath is not a dir -> ENOTDIR");
 			rt = -ENOTDIR;
 			goto out_free_vnodes;
@@ -164,14 +161,14 @@ int op_rename(const char *source, const char *dest)
 	/* Step 1: if destination exists: delete it */
 	if (destrt == 0) {
 		/* unlink in both cases */
-		rc = ufs_unlink(ufs, d_dest_ino, r_dest, dest_ino, 0);
-		if (rc) {
+		rt = ufs_unlink(ufs, d_dest_ino, r_dest, dest_ino, 0);
+		if (rt) {
 			debugf("ufs_unlink(ufs, %d, %s, %d, 0); failed", d_dest_ino, r_dest, dest_ino);
 			rt = -EIO;
 			goto out_free_vnodes;
 		}
 
-		if (LINUX_S_ISDIR(dest_inode->i_mode)) {
+		if (S_ISDIR(dest_inode->i_mode)) {
 			/* empty dir */
 			rt = do_killfilebyinode(ufs, dest_ino, inode2vnode(dest_inode));
 			if (rt) {
@@ -189,8 +186,8 @@ int op_rename(const char *source, const char *dest)
 				vnode2inode(d_dest_vnode)->i_nlink--;
 			}
 			/*
-			rc = ufs_write_inode(ufs, d_dest_ino, &d_dest_inode);
-			if (rc) {
+			rt = ufs_write_inode(ufs, d_dest_ino, &d_dest_inode);
+			if (rt) {
 				debugf("ufs_write_inode(ufs, ino, inode); failed");
 				rt = -EIO;
 			}
@@ -203,8 +200,8 @@ int op_rename(const char *source, const char *dest)
 				dest_inode->i_nlink -= 1;
 			}
 			/*
-			rc = vnode_put(dest_vnode, 1);
-			if (rc) {
+			rt = vnode_put(dest_vnode, 1);
+			if (rt) {
 				debugf("vnode_put(dest_vnode,1); failed");
 				rt = -EIO;
 				goto out_free_vnodes;
@@ -225,41 +222,23 @@ int op_rename(const char *source, const char *dest)
 		goto out_free_vnodes;
 	}
 	*/
-	do {
-		debugf("calling ufs_link(ufs, %d, %s, %d, %d);", d_dest_ino, r_dest, src_ino, do_modetoufslag(src_inode->i_mode));
-		rc = ufs_link(ufs, d_dest_ino, r_dest, src_vnode, src_inode->i_mode);
-		if (rc != 0) {
-	//		vnode_put(src_vnode, 1);
-			debugf("ufs_link(ufs, %d, %s, %d, %d); failed", d_dest_ino, r_dest, src_ino, do_modetoufslag(src_inode->i_mode));
-			rt = -EIO;
-			goto out_free_vnodes;
-		}
 
-		if (rc == ENOSPC) {
-			debugf("calling ufs_expand_dir(ufs, &d)", src_ino);
-			if (ufs_expand_dir(ufs, d_dest_ino)) {
-				debugf("error while expanding directory %s (%d)", p_dest, d_dest_ino);
-				rt = -ENOSPC;
-				goto out_free_vnodes;
-			}
-			rt = do_readvnode(ufs, p_dest, &d_dest_ino, &d_dest_vnode);
-			if (rt != 0) {
-				debugf("do_readvnode(%s, &d_dest_ino, &d_dest_inode); failed", p_dest);
-				goto out_free_vnodes;
-			}
-		}
-	} while (rc == ENOSPC);
-	//vnode_put(dest_vnode, 1);
-	//dest_vnode = NULL;
+	debugf("calling ufs_link(ufs, %d, %s, %d, %d);", d_dest_ino, r_dest, src_ino, do_modetoufslag(src_inode->i_mode));
+	rt = ufs_link(ufs, d_dest_ino, r_dest, src_vnode, src_inode->i_mode);
+	if (rt) {
+		debugf("ufs_link(ufs, %d, %s, %d, %d); failed", d_dest_ino, r_dest, src_ino, do_modetoufslag(src_inode->i_mode));
+		goto out_free_vnodes;
+	}
+
 
 	/* Special case: if moving dir across different parents 
 		 fix counters and '..' */
-	if (LINUX_S_ISDIR(src_inode->i_mode) && d_src_ino != d_dest_ino) {
+	if (S_ISDIR(src_inode->i_mode) && d_src_ino != d_dest_ino) {
 		vnode2inode(d_dest_vnode)->i_nlink++;
 		if (vnode2inode(d_src_vnode)->i_nlink > 1)
 			vnode2inode(d_src_vnode)->i_nlink--;
-		rc = ufs_write_inode(ufs, d_src_ino, d_src_vnode);
-		if (rc != 0) {
+		rt = ufs_write_inode(ufs, d_src_ino, d_src_vnode);
+		if (rt != 0) {
 			debugf("ufs_write_inode(ufs, src_ino, &src_inode); failed");
 			rt = -EIO;
 			goto out_free_vnodes;
@@ -274,14 +253,14 @@ int op_rename(const char *source, const char *dest)
 	/* utimes and inodes update */
 	vnode2inode(d_dest_vnode)->i_mtime = vnode2inode(d_dest_vnode)->i_ctime = src_inode->i_ctime = ufs->now ? ufs->now : time(NULL);
 	/*
-	rc = ufs_write_inode(ufs, d_dest_ino, d_dest_vnode);
-	if (rc != 0) {
+	rt = ufs_write_inode(ufs, d_dest_ino, d_dest_vnode);
+	if (rt != 0) {
 		debugf("ufs_write_inode(ufs, d_dest_ino, &d_dest_inode); failed");
 		rt = -EIO;
 		goto out_free_vnodes;
 	}
-	rc = vnode_put(src_vnode, 1);
-	if (rc != 0) {
+	rt = vnode_put(src_vnode, 1);
+	if (rt != 0) {
 		debugf("vnode_put(src_vnode,1); failed");
 		rt = -EIO;
 		goto out_free;
@@ -291,8 +270,8 @@ int op_rename(const char *source, const char *dest)
 
 	/* Step 3: delete the source */
 
-	rc = ufs_unlink(ufs, d_src_ino, r_src, src_ino, 0);
-	if (rc) {
+	rt = ufs_unlink(ufs, d_src_ino, r_src, src_ino, 0);
+	if (rt) {
 		debugf("while unlinking src ino %d", (int) src_ino);
 		rt = -EIO;
 		goto out_free;

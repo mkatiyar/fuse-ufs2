@@ -458,7 +458,7 @@ ufs_hashalloc(struct inode *ip, int cg, int pref, int size, allocfunc_t allocato
 /* Allocate a block for inode number ino. nfrags must be less than
  * what a block can hold.
  */
-errcode_t
+int
 ufs_block_alloc(uufsd_t *ufs, struct inode* inode, int size, ufs2_daddr_t *blkno)
 {
 	struct fs *fs = &ufs->d_fs;
@@ -614,7 +614,7 @@ ufs_block_free(
 }
 
 
-errcode_t
+int
 ufs_clear_indirect(uufsd_t *fs, struct inode *inode, blk_t fbn)
 {
 	int nindir = fs->d_fs.fs_nindir;
@@ -700,7 +700,7 @@ ufs_clear_indirect(uufsd_t *fs, struct inode *inode, blk_t fbn)
 	return 0;
 }
 
-errcode_t
+int
 ufs_truncate(uufsd_t *ufs, struct ufs_vnode *vnode, int newsize)
 {
 	struct inode *inode = vnode2inode(vnode);
@@ -720,7 +720,7 @@ ufs_truncate(uufsd_t *ufs, struct ufs_vnode *vnode, int newsize)
 	l0 = l1 = l2 = l3 = 0;
 
 	for (i = old_fbn ; (int)i >= new_fbn; i--) {
-		retval = ufs_bmap(ufs, inode->i_ino, vnode, i, &blkno);
+		retval = ufs_bmap(ufs, vnode, i, &blkno);
 		if (retval) {
 			return retval;
 		}
@@ -834,7 +834,7 @@ ufs_truncate(uufsd_t *ufs, struct ufs_vnode *vnode, int newsize)
 	return retval;
 }
 
-errcode_t
+int
 ufs_write_inode(uufsd_t *ufs, ino_t ino, struct ufs_vnode *vnode)
 {
 	struct ufs2_dinode *dinop = NULL;
@@ -864,58 +864,33 @@ struct link_struct  {
 	int		flags;
 	int		done;
 	unsigned int	blocksize;
-	errcode_t	err;
+	int		err;
 };
 
-#define MAX_RECLEN ((1<<16)-1)
-
-static errcode_t ufs_get_rec_len(uufsd_t *ufs,
+static int ufs_get_rec_len(uufsd_t *ufs,
 			  struct direct *dirent,
 			  unsigned int *rec_len)
 {
-	unsigned int len = dirent->d_reclen;
-
-	/*
-	struct fs *fs = &ufs->d_fs;
-	if (len == MAX_RECLEN || len == 0)
-		*rec_len = fs->fs_bsize;
-	else
-		*rec_len = (len & 65532) | ((len & 3) << 16);
-		*/
-	*rec_len = len;
+	*rec_len = dirent->d_reclen;
 	return 0;
 }
 
-errcode_t ufs_set_rec_len(uufsd_t *ufs,
+int ufs_set_rec_len(uufsd_t *ufs,
 			  unsigned int len,
 			  struct direct *dirent)
 {
-	struct fs *fs = &ufs->d_fs;
-	if ((len > fs->fs_bsize) || (fs->fs_bsize > (1 << 18)) || (len & 3))
-		return EINVAL;
-	if (len < 65536) {
-		dirent->d_reclen = len;
-		return 0;
-	}
-	if (len == fs->fs_bsize) {
-		if (fs->fs_bsize == 65536)
-			dirent->d_reclen = MAX_RECLEN;
-		else
-			dirent->d_reclen = 0;
-	} else
-		dirent->d_reclen = (len & 65532) | ((len >> 16) & 3);
+	dirent->d_reclen = len;
 	return 0;
 }
 
 static int link_proc(struct direct *dirent,
 		     int	offset,
-	//	     int	blocksize,
 		     char	*buf,
 		     void	*priv_data)
 {
 	struct link_struct *ls = (struct link_struct *) priv_data;
 	struct direct *next;
-	int blocksize = ls->ufs->d_fs.fs_bsize;
+	int blocksize = ls->blocksize;
 	unsigned int rec_len, min_rec_len, curr_rec_len;
 	int ret = 0;
 
@@ -978,13 +953,11 @@ static int link_proc(struct direct *dirent,
 	return DIRENT_ABORT|DIRENT_CHANGED;
 }
 
-errcode_t
-ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
+static int ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 		ino_t ino, int flags)
 {
-	errcode_t		retval;
+	int			retval;
 	struct link_struct	ls;
-	struct fs *fs = &ufs->d_fs;
 
 	RETURN_IF_RDONLY(ufs);
 
@@ -994,23 +967,30 @@ ufs_addnamedir(uufsd_t *ufs, ino_t dir, const char *name,
 	ls.inode = ino;
 	ls.flags = flags;
 	ls.done = 0;
-	ls.blocksize = fs->fs_bsize;
+	ls.blocksize = DIRBLKSIZ;
 	ls.err = 0;
 
-	retval = ufs_dir_iterate(ufs, dir, DIRENT_FLAG_INCLUDE_EMPTY,
-				    0, link_proc, &ls);
+	retval = ufs_dir_iterate(ufs, dir, link_proc, &ls);
 	if (retval)
 		return retval;
 	if (ls.err)
 		return ls.err;
 
-	if (!ls.done)
-		return ENOSPC;
+	if (ls.done)
+		return 0; /* success */
 
-	return 0;
+	/* Try to add another block to the directory
+	 * (A single DIRBLKSIZ block will be sufficient)
+	 */
+	if (ufs_dir_append(ufs, dir, ino, flags, name) != 0) {
+		debugf("Failed to expand directory");
+		return -ENOSPC;
+	}
+
+	return 0; /* success */
 }
 
-errcode_t
+int
 ufs_link(uufsd_t *ufs, ino_t dir_ino, char *r_dest, struct ufs_vnode *vnode, int mode)
 {
 	struct inode *ip;
@@ -1057,6 +1037,9 @@ static int unlink_proc(struct direct *dirent,
 	struct unlink_struct *ls = (struct unlink_struct *) priv_data;
 	struct direct *prev;
 
+	if (dirent->d_ino==0) /* skip unused dentry */
+		return 0;
+
 	prev = ls->prev_dirent;
 	ls->prev_dirent = dirent;
 
@@ -1083,7 +1066,7 @@ static int unlink_proc(struct direct *dirent,
 	return DIRENT_ABORT|DIRENT_CHANGED;
 }
 
-errcode_t
+int
 ufs_unlink(uufsd_t *ufs, ino_t dir_ino, char *name, ino_t file_ino, int flags)
 {
 	struct unlink_struct ls;
@@ -1102,7 +1085,7 @@ ufs_unlink(uufsd_t *ufs, ino_t dir_ino, char *name, ino_t file_ino, int flags)
 	ls.prev_dirent = 0;
 
 
-	retval = ufs_dir_iterate(ufs, dir_ino, 0, NULL, unlink_proc, &ls);
+	retval = ufs_dir_iterate(ufs, dir_ino, unlink_proc, &ls);
 	if (retval)
 		return retval;
 	return 0;
@@ -1171,7 +1154,128 @@ ufs_free_inode(uufsd_t *ufs, struct ufs_vnode *vnode, ino_t ino, int mode)
 	return (0);
 }
 
-int ufs_expand_dir(uufsd_t *ufs, ino_t d_ino)
+/* Initialize directory block: create a single entry spanning entire block */
+static void ufs_init_dir_block(uufsd_t *ufs, char *buf, u_int16_t block_size,
+				ino_t ino, int flags, const char *name)
 {
-	return 0;
+	struct direct * de = (struct direct *)buf;
+	assert(block_size >= sizeof(struct direct));
+
+	memset(buf, 0, block_size);
+
+	de->d_ino    = ino;
+	de->d_reclen = block_size;
+	de->d_type   = IFTODT(flags);
+	de->d_namlen = MIN(MAXNAMLEN, strlen(name));
+	strncpy(de->d_name, name, MAXNAMLEN+1);
+}
+
+/* Append DIRBLKSIZ block to directory and fill in a single entry */
+int ufs_dir_append(uufsd_t *ufs, ino_t d_ino,
+		   ino_t f_ino, int f_flags, const char *f_name)
+{
+	struct fs *fs = &ufs->d_fs;
+	u_int16_t dir_blksize = DIRBLKSIZ; /* to become property of 'ufs' arg */
+
+	int err = 0;
+	char *dir_buf = NULL;
+
+	struct ufs_vnode *vnode = vnode_get(ufs, d_ino);
+	if (vnode == NULL) {
+		err = -ENOMEM;
+		goto out;
+	}
+	struct inode *inode = vnode2inode(vnode);
+
+	/* Old and new directory size */
+	ufs2_daddr_t old_size = inode->i_size;
+	ufs2_daddr_t new_size = old_size + dir_blksize;
+
+	/* We shall touch nothing but the last
+	   fs_bsize block of directory contents
+	 */
+	ufs2_daddr_t dir_blkno = lblkno(fs, old_size);
+	/* assert(dir_blkno == lblkno(fs, new_size-1)); */
+
+	/* Bytes currently present in that block */
+	size_t old_bytes = blkoff(fs, old_size);
+
+	/* Bytes to be occupied in that block */
+	size_t new_bytes = blkoff(fs, new_size-1)+1;
+
+	/* Sizes rounded up to fs_fsize fragments */
+	size_t old_fragsiz = fragroundup(fs, old_bytes);
+	size_t new_fragsiz = fragroundup(fs, new_bytes);
+
+	/* Filesystem block number (lookup done later) */
+	ufs2_daddr_t fs_blkno = 0;
+
+	dir_buf = malloc(new_bytes);
+	if (!dir_buf) {
+		err = -ENOMEM;
+		goto out;
+	}
+
+	/* Load directory blocks already present in fs block */
+	if (old_bytes > 0) {
+
+		if (ufs_bmap(ufs, vnode, dir_blkno, &fs_blkno) != 0) {
+			err = -EIO;
+			goto out;
+		}
+
+		if (blkread(ufs, fsbtodb(fs, fs_blkno), dir_buf, old_bytes) == -1) {
+			debugf("Unable to read block %d\n", fs_blkno);
+			err = -EIO;
+			goto out;
+		}
+
+	}
+
+	/* Initialize new directory block */
+	ufs_init_dir_block(ufs, dir_buf + old_bytes, dir_blksize,
+			   f_ino, f_flags, f_name);
+
+
+	/* Allocate (new, or bigger) fs block if needed */
+	if (new_fragsiz > old_fragsiz)
+	{
+		ufs2_daddr_t old_fsblk = fs_blkno;
+
+		err = ufs_block_alloc(ufs, inode, new_fragsiz, &fs_blkno);
+		if (err) {
+			debugf("ufs_block_alloc failed");
+			goto out;
+		}
+
+		err = ufs_set_block(ufs, inode, dir_blkno, fs_blkno);
+		if (err) {
+			debugf("ufs_set_block failed");
+			goto out;
+		}
+
+		/* Drop old fs block (if there was any) */
+		if (old_fragsiz > 0)
+			ufs_block_free(ufs, vnode, old_fsblk, old_fragsiz, d_ino);
+
+	}
+
+
+	/* Save directory blocks (including added one) */
+	if (blkwrite(ufs, fsbtodb(fs, fs_blkno), dir_buf, new_bytes) == -1) {
+		debugf("Unable to write block %d\n", fs_blkno);
+		err = -EIO;
+		goto out;
+	}
+
+	/* Success! Announce increased directory size */
+	inode->i_size = new_size;
+
+out:
+	free(dir_buf);
+
+	if (vnode)
+		vnode_put(vnode, 1);
+
+	return err;
 }
